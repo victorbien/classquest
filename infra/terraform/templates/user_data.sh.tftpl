@@ -1,0 +1,81 @@
+#!/bin/bash
+# ======================================================================
+# ClassQuest EC2 bootstrap (cloud-init) — rendered by Terraform compute.tf.
+# Installs Docker + Compose, clones the repo, writes a production .env and
+# brings up app-tier + worker + web-tier against the real AWS resources.
+# No AWS credentials are written here: the instance uses its IAM role.
+# ======================================================================
+set -euxo pipefail
+
+exec > /var/log/classquest-bootstrap.log 2>&1
+
+# ---- 1. Install Docker + Compose plugin + git ----
+dnf update -y
+dnf install -y docker git
+systemctl enable --now docker
+
+# Docker Compose v2 plugin
+mkdir -p /usr/libexec/docker/cli-plugins
+curl -sSL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
+  -o /usr/libexec/docker/cli-plugins/docker-compose
+chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+
+usermod -aG docker ec2-user || true
+
+# ---- 2. Clone the application repository ----
+APP_DIR=/opt/classquest
+rm -rf "$APP_DIR"
+git clone --branch "${git_branch}" --depth 1 "${git_repo}" "$APP_DIR"
+cd "$APP_DIR"
+
+# ---- 3. Write the production .env (cloud_target = aws) ----
+# AWS_ENDPOINT_URL and S3_PUBLIC_ENDPOINT are intentionally left UNSET so the
+# AWS SDK targets real regional endpoints. Credentials come from the instance
+# role, not from this file.
+cat > "$APP_DIR/.env" <<ENV
+CLOUD_TARGET=aws
+AWS_REGION=${aws_region}
+ENV_NAME=${env_name}
+
+S3_BUCKET=${s3_bucket}
+SQS_QUEUE_NAME=${sqs_queue_name}
+SQS_DLQ_NAME=${sqs_dlq_name}
+SNS_TOPIC_NAME=${sns_topic_name}
+CW_LOG_GROUP=${cw_log_group}
+CW_NAMESPACE=${cw_namespace}
+ADMIN_ALERT_EMAIL=${admin_email}
+
+MYSQL_HOST=${mysql_host}
+MYSQL_PORT=${mysql_port}
+MYSQL_DATABASE=${mysql_database}
+MYSQL_USER=${mysql_user}
+MYSQL_PASSWORD=${mysql_password}
+
+JWT_SECRET=${jwt_secret}
+JWT_EXPIRES_IN=1h
+BCRYPT_ROUNDS=10
+
+APP_TIER_PORT=4000
+WEB_TIER_PORT=8080
+APP_TIER_URL=http://app-tier:4000
+
+DEMO_MODE=false
+
+WORKER_MAX_ATTEMPTS=3
+WORKER_POLL_WAIT_SECONDS=5
+WORKER_VISIBILITY_TIMEOUT=30
+WORKER_RETRY_DELAY_SECONDS=5
+
+HTTP_400_ALARM_THRESHOLD=${http_400_thresh}
+HTTP_400_ALARM_PERIOD_SECONDS=${http_400_period}
+
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX=2000
+
+MAX_UPLOAD_BYTES=${max_upload}
+ENV
+
+# ---- 4. Launch the stack (AWS override drops localstack/mysql/terraform) ----
+docker compose -f docker-compose.yml -f docker-compose.aws.yml up -d --build
+
+echo "ClassQuest bootstrap complete."

@@ -37,3 +37,32 @@ output "web_role_arn" {
   description = "Web Tier IAM role ARN (read-only)."
   value       = aws_iam_role.web.arn
 }
+
+# ======================================================================
+# Production deployment outputs (aws target). Empty on the LocalStack target.
+# ======================================================================
+
+output "ec2_public_ip" {
+  description = "Public IP of the compute instance (aws target)."
+  value       = one(aws_instance.app[*].public_ip)
+}
+
+output "ec2_public_dns" {
+  description = "Public DNS of the compute instance (aws target)."
+  value       = one(aws_instance.app[*].public_dns)
+}
+
+output "app_url" {
+  description = "URL to open the application once bootstrap finishes (aws target)."
+  value       = local.is_aws ? "http://${one(aws_instance.app[*].public_ip)}" : null
+}
+
+output "rds_endpoint" {
+  description = "RDS MySQL endpoint address (aws target)."
+  value       = one(aws_db_instance.mysql[*].address)
+}
+
+output "vpc_id" {
+  description = "Production VPC id (aws target)."
+  value       = one(aws_vpc.main[*].id)
+}

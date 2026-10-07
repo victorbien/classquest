@@ -1,15 +1,22 @@
-# Variable values for a REAL AWS deployment.
-# Copy to aws.tfvars and adjust. Provide credentials via environment or an
-# assumed role (never hardcode keys here — report 6.10).
+# Variable values for a REAL AWS deployment (EC2 + RDS + S3/SQS/SNS/CloudWatch).
+# Copy to aws.tfvars and adjust. aws.tfvars is git-ignored.
 #
+#   cp aws.tfvars.example aws.tfvars   (PowerShell: Copy-Item)
+#   $env:TF_VAR_db_password = "<a strong RDS password>"
+#   $env:TF_VAR_jwt_secret  = "<a long random string>"
 #   terraform apply -var-file=aws.tfvars
 #
+# Provide AWS credentials via `aws configure` / SSO / an assumed role —
+# never hardcode keys here (report 6.10). Secrets (db_password, jwt_secret)
+# are supplied via TF_VAR_* environment variables above, not this file.
+
 cloud_target = "aws"
 aws_region   = "ap-southeast-2" # Sydney — trans-Tasman residency (report 3.2)
 env_name     = "prod"
 
-# Bucket names are globally unique — pick your own.
-s3_bucket      = "classquest-media-assets-prod-CHANGEME"
+# ---- Data-plane resources ----
+# Bucket names are globally unique.
+s3_bucket      = "classquest-media-assets-prod"
 sqs_queue_name = "classquest-asset-processing"
 sqs_dlq_name   = "classquest-asset-processing-dlq"
 sns_topic_name = "classquest-admin-alerts"
@@ -22,3 +29,32 @@ http_400_threshold      = 50
 http_400_period_seconds = 60
 glacier_transition_days = 90
 expiration_days         = 1825
+
+# ---- Network ----
+vpc_cidr = "10.20.0.0/16"
+# Lock SSH to your own IP, e.g. "203.0.113.4/32". 0.0.0.0/0 is open to the world.
+allowed_ssh_cidr = "0.0.0.0/0"
+
+# ---- Compute (EC2) ----
+instance_type = "t3.medium"
+instance_disk_gb = 30
+# Name of an EC2 key pair you created in this region (for SSH). Empty = no SSH key.
+ec2_key_name = ""
+git_repo_url = "https://github.com/victorbien/classquest.git"
+git_branch   = "main"
+
+# ---- Database (RDS for MySQL) ----
+db_instance_class        = "db.t3.micro"
+db_engine_version        = "8.0"
+db_allocated_storage     = 20
+db_max_allocated_storage = 100
+db_multi_az              = false # set true for HA (doubles DB cost)
+db_backup_retention_days = 7
+mysql_database           = "classquest"
+mysql_user               = "classquest_app"
+
+# db_password and jwt_secret: DO NOT put here. Supply via:
+#   $env:TF_VAR_db_password = "..."
+#   $env:TF_VAR_jwt_secret  = "..."
+
+max_upload_bytes = 52428800

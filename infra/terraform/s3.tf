@@ -4,6 +4,11 @@
 # (5.4.3-5.4.5); versioning (5.4.6); Block Public Access (5.4.7, 6.8).
 # ----------------------------------------------------------------------
 
+import {
+  to = aws_s3_bucket.media
+  id = "classquest-media-assets-prod"
+}
+
 resource "aws_s3_bucket" "media" {
   bucket        = var.s3_bucket
   force_destroy = true # prototype convenience; NOT for production

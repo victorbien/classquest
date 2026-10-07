@@ -21,6 +21,9 @@ infra/terraform/*.tfstate
 infra/terraform/*.tfstate.*
 infra/terraform/.terraform.lock.hcl
 infra/terraform/crash.log
+# real AWS variable values & secrets — never commit
+infra/terraform/aws.tfvars
+infra/terraform/*.auto.tfvars
 
 # localstack volume
 .localstack/

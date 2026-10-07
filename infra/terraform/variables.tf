@@ -91,3 +91,122 @@ variable "expiration_days" {
   type        = number
   default     = 1825
 }
+
+# ======================================================================
+# Production deployment variables (aws target: VPC, EC2, RDS).
+# Unused by the LocalStack target.
+# ======================================================================
+
+# ---- Network ----
+variable "vpc_cidr" {
+  description = "CIDR block for the production VPC (aws target)."
+  type        = string
+  default     = "10.20.0.0/16"
+}
+
+variable "allowed_ssh_cidr" {
+  description = "CIDR allowed to SSH to the EC2 instance (aws target). Lock this to your IP (e.g. 203.0.113.4/32)."
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
+# ---- Compute (EC2) ----
+variable "instance_type" {
+  description = "EC2 instance type for the compute tier (aws target)."
+  type        = string
+  default     = "t3.medium"
+}
+
+variable "instance_disk_gb" {
+  description = "Root EBS volume size (GiB) for the EC2 instance."
+  type        = number
+  default     = 30
+}
+
+variable "ec2_key_name" {
+  description = "Existing EC2 key pair name for SSH. Leave empty to launch without an SSH key."
+  type        = string
+  default     = ""
+}
+
+variable "git_repo_url" {
+  description = "Git repository the EC2 instance clones to build the app."
+  type        = string
+  default     = "https://github.com/victorbien/classquest.git"
+}
+
+variable "git_branch" {
+  description = "Git branch the EC2 instance checks out."
+  type        = string
+  default     = "main"
+}
+
+# ---- Database (RDS for MySQL) ----
+variable "db_instance_class" {
+  description = "RDS instance class (aws target)."
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "db_engine_version" {
+  description = "RDS MySQL engine version."
+  type        = string
+  default     = "8.0"
+}
+
+variable "db_allocated_storage" {
+  description = "Initial RDS storage in GiB."
+  type        = number
+  default     = 20
+}
+
+variable "db_max_allocated_storage" {
+  description = "Storage autoscaling ceiling in GiB."
+  type        = number
+  default     = 100
+}
+
+variable "db_multi_az" {
+  description = "Enable RDS Multi-AZ for high availability (report 3.5). Doubles DB cost."
+  type        = bool
+  default     = false
+}
+
+variable "db_backup_retention_days" {
+  description = "Automated backup retention in days."
+  type        = number
+  default     = 7
+}
+
+variable "mysql_database" {
+  description = "Application database name."
+  type        = string
+  default     = "classquest"
+}
+
+variable "mysql_user" {
+  description = "Application / RDS master username."
+  type        = string
+  default     = "classquest_app"
+}
+
+variable "db_password" {
+  description = "RDS master password (aws target). Supply via TF_VAR_db_password; never commit. Unused by the localstack target."
+  type        = string
+  sensitive   = true
+  default     = "" # localstack target does not create RDS; aws target MUST override
+}
+
+# ---- Application secrets / tuning passed to the instance .env ----
+variable "jwt_secret" {
+  description = "JWT signing secret for the app (aws target). Supply via TF_VAR_jwt_secret; never commit. Unused by the localstack target."
+  type        = string
+  sensitive   = true
+  default     = "" # localstack target does not use this; aws target MUST override
+}
+
+variable "max_upload_bytes" {
+  description = "Maximum upload size in bytes."
+  type        = number
+  default     = 52428800
+}

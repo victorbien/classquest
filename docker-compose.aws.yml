@@ -1,0 +1,86 @@
+# ======================================================================
+# ClassQuest — real AWS override.
+#
+# Use together with the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.aws.yml up -d --build
+#
+# This override makes the stack talk to a REAL AWS account instead of
+# LocalStack:
+#   - clears AWS_ENDPOINT_URL / S3_PUBLIC_ENDPOINT so the SDK uses regional
+#     AWS endpoints and presigned URLs are signed against real S3
+#   - removes the dependency on the localstack / mysql / terraform containers
+#     (RDS is the database; infra is provisioned by Terraform, not in-stack)
+#   - exposes the web tier on host port 80 (standard HTTP)
+#
+# Credentials: on EC2 these come from the instance IAM role (no keys needed).
+# If you run this override on your laptop against real AWS, provide creds via
+# the standard AWS env vars / shared config (aws configure) and Docker will
+# pass AWS_* through — see docs/AWS_SETUP.md.
+# ======================================================================
+
+services:
+  # Not used against real AWS — scale to zero so they never start.
+  localstack:
+    deploy:
+      replicas: 0
+    entrypoint: ["true"]
+    healthcheck:
+      disable: true
+
+  mysql:
+    deploy:
+      replicas: 0
+    entrypoint: ["true"]
+    healthcheck:
+      disable: true
+
+  terraform:
+    deploy:
+      replicas: 0
+    entrypoint: ["true"]
+
+  app-tier:
+    environment:
+      # Clear LocalStack endpoints -> use real AWS regional endpoints.
+      AWS_ENDPOINT_URL: ""
+      S3_PUBLIC_ENDPOINT: ""
+      # Database is RDS, not the local container: take the host from .env
+      # (the base file hard-codes MYSQL_HOST=mysql, which we override here).
+      MYSQL_HOST: ${MYSQL_HOST:?set MYSQL_HOST to the RDS endpoint in .env}
+      # Pass through host AWS credentials when present (ignored on EC2, where
+      # the instance role is used instead). Empty is fine.
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      AWS_REGION: ${AWS_REGION:-ap-southeast-2}
+    # The local MySQL/LocalStack/Terraform containers do not run against AWS.
+    depends_on: !reset []
+
+  worker:
+    environment:
+      AWS_ENDPOINT_URL: ""
+      S3_PUBLIC_ENDPOINT: ""
+      MYSQL_HOST: ${MYSQL_HOST:?set MYSQL_HOST to the RDS endpoint in .env}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      AWS_REGION: ${AWS_REGION:-ap-southeast-2}
+    depends_on:
+      app-tier:
+        condition: service_healthy
+
+  web-tier:
+    environment:
+      AWS_ENDPOINT_URL: ""
+      S3_PUBLIC_ENDPOINT: ""
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      AWS_REGION: ${AWS_REGION:-ap-southeast-2}
+    # Serve the app on the standard HTTP port on the host.
+    ports: !override
+      - "80:8080"
+      - "8080:8080"
+    depends_on:
+      app-tier:
+        condition: service_healthy
