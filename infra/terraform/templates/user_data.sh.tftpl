@@ -5,28 +5,60 @@
 # brings up app-tier + worker + web-tier against the real AWS resources.
 # No AWS credentials are written here: the instance uses its IAM role.
 # ======================================================================
-set -euxo pipefail
+set -xo pipefail
 
-exec > /var/log/classquest-bootstrap.log 2>&1
+# Log to a file AND the serial console (so `aws ec2 get-console-output` shows
+# progress and any failure, even without SSH access).
+exec > >(tee /var/log/classquest-bootstrap.log | tee /dev/console) 2>&1
 
-# ---- 1. Install Docker + Compose plugin + git ----
-dnf update -y
-dnf install -y docker git
+# Small retry helper: retry a command up to 5 times with a short backoff.
+retry() {
+  local n=1
+  until "$@"; do
+    if [ "$n" -ge 5 ]; then
+      echo "FATAL: command failed after $n attempts: $*"
+      return 1
+    fi
+    echo "attempt $n failed: $* — retrying in 10s"
+    n=$((n + 1))
+    sleep 10
+  done
+}
+
+echo "=== ClassQuest bootstrap starting at $(date -u) ==="
+
+# ---- 1. Install Docker + git ----
+# dnf update is best-effort: a transient mirror hiccup must not abort the run.
+dnf update -y || echo "WARN: dnf update failed (continuing)"
+retry dnf install -y docker git
 systemctl enable --now docker
 
-# Docker Compose v2 plugin
+# Wait until the Docker daemon actually answers before using it.
+retry docker info
+
+# ---- Docker Compose v2 plugin: download, with a dnf fallback ----
 mkdir -p /usr/libexec/docker/cli-plugins
-curl -sSL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
-  -o /usr/libexec/docker/cli-plugins/docker-compose
-chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+if ! retry curl -fSL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
+      -o /usr/libexec/docker/cli-plugins/docker-compose; then
+  echo "WARN: compose plugin download failed; trying dnf docker-compose-plugin"
+  dnf install -y docker-compose-plugin || true
+fi
+chmod +x /usr/libexec/docker/cli-plugins/docker-compose 2>/dev/null || true
+docker compose version || { echo "FATAL: docker compose plugin unavailable"; exit 1; }
 
 usermod -aG docker ec2-user || true
 
 # ---- 2. Clone the application repository ----
 APP_DIR=/opt/classquest
 rm -rf "$APP_DIR"
-git clone --branch "${git_branch}" --depth 1 "${git_repo}" "$APP_DIR"
+retry git clone --branch "${git_branch}" --depth 1 "${git_repo}" "$APP_DIR"
 cd "$APP_DIR"
+
+# Fail loudly if the AWS override is missing (e.g. not pushed to the branch).
+if [ ! -f docker-compose.aws.yml ]; then
+  echo "FATAL: docker-compose.aws.yml not found in the cloned repo (branch ${git_branch}). Push it to the branch and re-launch."
+  exit 1
+fi
 
 # ---- 3. Write the production .env (cloud_target = aws) ----
 # AWS_ENDPOINT_URL and S3_PUBLIC_ENDPOINT are intentionally left UNSET so the
@@ -76,6 +108,10 @@ MAX_UPLOAD_BYTES=${max_upload}
 ENV
 
 # ---- 4. Launch the stack (AWS override drops localstack/mysql/terraform) ----
-docker compose -f docker-compose.yml -f docker-compose.aws.yml up -d --build
+# Building three images from source can be slow on first boot; retry wraps a
+# transient network failure during image pulls / npm install.
+retry docker compose -f docker-compose.yml -f docker-compose.aws.yml up -d --build
 
-echo "ClassQuest bootstrap complete."
+echo "=== docker compose ps ==="
+docker compose -f docker-compose.yml -f docker-compose.aws.yml ps
+echo "=== ClassQuest bootstrap complete at $(date -u) ==="
