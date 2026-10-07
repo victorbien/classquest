@@ -36,14 +36,28 @@ systemctl enable --now docker
 # Wait until the Docker daemon actually answers before using it.
 retry docker info
 
-# ---- Docker Compose v2 plugin: download, with a dnf fallback ----
+# ---- Docker CLI plugins: buildx (required by `compose --build`) + compose ----
+# `docker compose build` delegates to buildx, so buildx must be present or the
+# build fails with "compose build requires buildx 0.17.0 or later".
 mkdir -p /usr/libexec/docker/cli-plugins
+
+# buildx
+if ! retry curl -fSL "https://github.com/docker/buildx/releases/latest/download/buildx-linux-amd64" \
+      -o /usr/libexec/docker/cli-plugins/docker-buildx; then
+  echo "WARN: buildx download failed; trying dnf docker-buildx-plugin"
+  dnf install -y docker-buildx-plugin || true
+fi
+chmod +x /usr/libexec/docker/cli-plugins/docker-buildx 2>/dev/null || true
+
+# compose
 if ! retry curl -fSL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
       -o /usr/libexec/docker/cli-plugins/docker-compose; then
   echo "WARN: compose plugin download failed; trying dnf docker-compose-plugin"
   dnf install -y docker-compose-plugin || true
 fi
 chmod +x /usr/libexec/docker/cli-plugins/docker-compose 2>/dev/null || true
+
+docker buildx version || { echo "FATAL: docker buildx unavailable"; exit 1; }
 docker compose version || { echo "FATAL: docker compose plugin unavailable"; exit 1; }
 
 usermod -aG docker ec2-user || true
