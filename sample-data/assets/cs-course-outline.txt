@@ -1,0 +1,10 @@
+DEMO / SAMPLE CONTENT — not real course material.
+
+Cybersecurity Essentials
+========================
+Course Outline (in preparation)  (Overview)
+
+Draft outline of topics and weekly schedule.
+
+(This file is synthetic sample data used to demonstrate the ClassQuest
+cloud prototype's course -> upload -> process -> open workflow.)

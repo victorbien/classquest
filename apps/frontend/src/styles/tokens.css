@@ -1,0 +1,78 @@
+/*
+ * ClassQuest design tokens (prototype-derived; blue-first identity).
+ * Components reference these variables only — never raw hex values.
+ */
+:root {
+  /* ---- brand / semantic colours ---- */
+  --cq-sidebar: #1b2536;          /* dark slate-navy */
+  --cq-sidebar-raised: #253148;   /* hover / footer card */
+  --cq-sidebar-text: #aeb9cc;
+  --cq-sidebar-text-strong: #ffffff;
+
+  --cq-primary: #0e9be0;          /* sky blue: actions, active nav, progress */
+  --cq-primary-hover: #0b86c4;
+  --cq-primary-strong: #075f8c;   /* text on primary tint */
+  --cq-primary-tint: #e3f3fc;     /* pale blue: chips, info badges */
+
+  --cq-accent: #f5b800;           /* amber: reward / highlight CTA */
+  --cq-accent-strong: #8a5a00;
+  --cq-accent-tint: #fff4d1;
+
+  --cq-danger: #e5484d;           /* red: attention / errors */
+  --cq-danger-strong: #b4232a;
+  --cq-danger-tint: #fde8ea;      /* pink */
+
+  --cq-success: #12a37f;          /* teal-green */
+  --cq-success-strong: #0b7a5e;
+  --cq-success-tint: #dcf5ec;
+
+  --cq-callout: #eef0fb;          /* lavender panels */
+  --cq-callout-border: #dde1f6;
+  --cq-callout-strong: #4b4fa8;
+
+  /* ---- neutrals ---- */
+  --cq-bg: #f4f6fa;               /* cool light grey page */
+  --cq-surface: #ffffff;          /* cards */
+  --cq-surface-muted: #f7f9fc;    /* inputs, table header, subtle fills */
+  --cq-border: #e6eaf1;
+  --cq-border-strong: #d4dae4;
+  --cq-text: #0f1a2e;             /* near-black navy */
+  --cq-text-muted: #5f6b80;       /* slate */
+  --cq-text-subtle: #8c96a8;
+
+  /* ---- typography ---- */
+  --cq-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --cq-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --cq-text-page-title: 700 32px/1.15 var(--cq-font);
+  --cq-text-card-title: 600 17px/1.3 var(--cq-font);
+  --cq-text-body: 400 14px/1.55 var(--cq-font);
+  --cq-text-small: 400 12.5px/1.45 var(--cq-font);
+  --cq-text-eyebrow: 700 11px/1.2 var(--cq-font);
+  --cq-text-kpi: 700 34px/1.05 var(--cq-font);
+  --cq-eyebrow-tracking: 0.08em;
+
+  /* ---- spacing (8px grid) ---- */
+  --cq-space-1: 4px;
+  --cq-space-2: 8px;
+  --cq-space-3: 12px;
+  --cq-space-4: 16px;
+  --cq-space-5: 20px;
+  --cq-space-6: 24px;
+  --cq-space-8: 32px;
+  --cq-space-10: 40px;
+
+  /* ---- shape & depth ---- */
+  --cq-radius-sm: 8px;
+  --cq-radius-md: 12px;           /* buttons, inputs */
+  --cq-radius-lg: 16px;           /* cards */
+  --cq-radius-pill: 999px;
+  --cq-shadow-card: 0 1px 2px rgba(15, 26, 46, 0.04), 0 4px 16px rgba(15, 26, 46, 0.05);
+  --cq-shadow-raised: 0 8px 28px rgba(15, 26, 46, 0.1);
+  --cq-focus-ring: 0 0 0 3px rgba(14, 155, 224, 0.3);
+
+  /* ---- layout ---- */
+  --cq-sidebar-width: 240px;
+  --cq-topbar-height: 64px;
+  --cq-content-max: 1320px;
+}

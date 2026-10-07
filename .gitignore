@@ -7,6 +7,8 @@ dist/
 build/
 *.tsbuildinfo
 apps/frontend/dist/
+# SPA copied in by the web-tier Docker build
+services/web-tier/public/
 
 # env & secrets (NEVER commit real secrets — see .env.example)
 .env

@@ -29,18 +29,33 @@ export interface SampleUser {
   displayName: string;
 }
 
-export interface SampleCatalogEntry {
+export interface SampleCourse {
   title: string;
+  description: string;
+  category: string;
+  status: 'draft' | 'published';
+}
+
+/** One sample resource; `course` is the title of an entry in courses.json. */
+export interface SampleCatalogEntry {
+  course: string;
+  order: number;
+  section: string | null;
+  title: string;
+  description: string;
   type: 'document' | 'book' | 'video';
   contentType: string;
   filename: string;
-  subject: string;
-  yearLevel: string;
 }
 
 export async function loadSampleUsers(): Promise<SampleUser[]> {
   const file = path.join(sampleRoot(), 'users.json');
   return JSON.parse(await readFile(file, 'utf8')) as SampleUser[];
+}
+
+export async function loadSampleCourses(): Promise<SampleCourse[]> {
+  const file = path.join(sampleRoot(), 'courses.json');
+  return JSON.parse(await readFile(file, 'utf8')) as SampleCourse[];
 }
 
 export async function loadSampleCatalog(): Promise<SampleCatalogEntry[]> {

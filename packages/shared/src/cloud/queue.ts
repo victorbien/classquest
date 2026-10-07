@@ -8,6 +8,7 @@ import {
   SendMessageCommand,
   ReceiveMessageCommand,
   DeleteMessageCommand,
+  ChangeMessageVisibilityCommand,
   GetQueueAttributesCommand,
   type Message,
 } from '@aws-sdk/client-sqs';
@@ -62,6 +63,34 @@ export class QueueService {
   async deleteMessage(receiptHandle: string): Promise<void> {
     const url = await this.queueUrl();
     await sqsClient().send(new DeleteMessageCommand({ QueueUrl: url, ReceiptHandle: receiptHandle }));
+  }
+
+  /**
+   * Make an in-flight message visible again after `seconds`. Used for retry
+   * back-off: the message is NOT deleted, so SQS counts the next delivery and
+   * applies the queue's redrive policy (DLQ after maxReceiveCount).
+   */
+  async changeVisibility(receiptHandle: string, seconds: number): Promise<void> {
+    const url = await this.queueUrl();
+    await sqsClient().send(
+      new ChangeMessageVisibilityCommand({
+        QueueUrl: url,
+        ReceiptHandle: receiptHandle,
+        VisibilityTimeout: seconds,
+      }),
+    );
+  }
+
+  /** The queue's redrive maxReceiveCount, or undefined if no redrive policy is set. */
+  async redriveMaxReceiveCount(): Promise<number | undefined> {
+    const url = await this.queueUrl();
+    const out = await sqsClient().send(
+      new GetQueueAttributesCommand({ QueueUrl: url, AttributeNames: ['RedrivePolicy'] }),
+    );
+    const raw = out.Attributes?.RedrivePolicy;
+    if (!raw) return undefined;
+    const n = Number((JSON.parse(raw) as { maxReceiveCount?: number | string }).maxReceiveCount);
+    return Number.isFinite(n) && n > 0 ? n : undefined;
   }
 
   /** Approximate number of messages waiting — drives the QueueDepth metric. */

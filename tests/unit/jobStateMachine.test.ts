@@ -4,6 +4,8 @@ import {
   assertTransition,
   isTerminal,
   nextStateAfterAttempt,
+  sourcesFor,
+  CLAIMABLE_STATES,
   InvalidJobTransitionError,
 } from '../../packages/shared/src/domain/jobStateMachine.js';
 
@@ -50,5 +52,24 @@ describe('job state machine (report 3.7)', () => {
       expect(nextStateAfterAttempt(false, 3, 3)).toBe('failed');
       expect(nextStateAfterAttempt(false, 4, 3)).toBe('failed');
     });
+  });
+
+  describe('sourcesFor (conditional DB updates)', () => {
+    it('lists the states that may enter each target state', () => {
+      expect(sourcesFor('queued').sort()).toEqual(['processing', 'submitted']);
+      expect(sourcesFor('processing')).toEqual(['queued']);
+      expect(sourcesFor('completed')).toEqual(['processing']);
+      expect(sourcesFor('failed').sort()).toEqual(['processing', 'queued', 'submitted']);
+    });
+    it('never allows leaving a terminal state', () => {
+      for (const to of ['submitted', 'queued', 'processing', 'completed', 'failed'] as const) {
+        expect(sourcesFor(to)).not.toContain('completed');
+        expect(sourcesFor(to)).not.toContain('failed');
+      }
+    });
+  });
+
+  it('claimable states exclude terminal states (no completed/failed -> processing)', () => {
+    expect([...CLAIMABLE_STATES].sort()).toEqual(['processing', 'queued']);
   });
 });

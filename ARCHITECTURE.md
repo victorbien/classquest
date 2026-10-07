@@ -1,89 +1,88 @@
 # ClassQuest Cloud Prototype — Architecture
 
-> A research proof-of-concept realising the AWS cloud architecture from the INFS803 report
-> _Cloud Solution Architecture Report — On-Premises to AWS Migration: ClassQuest_ (Evans & Bien,
-> S2 2026). It runs the **real AWS service APIs on LocalStack**, so the architectural behaviour is
-> exercised without an AWS account or cost. Section references (`§`) point into the source report.
+> A research proof-of-concept of the AWS architecture in the INFS803 report
+> _Cloud Solution Architecture Report — On-Premises to AWS Migration: ClassQuest_
+> (Evans & Bien, S2 2026). Section references (`§`) point into that report.
+>
+> This document separates **what this prototype implements** from **the
+> production AWS architecture described in the report**. The prototype runs
+> real AWS service APIs on LocalStack; it does not provision the report's full
+> production network and compute layer.
 
 ---
 
-## 1. System Overview
+## 1. System overview
 
-ClassQuest is a K-12 learning platform where **teachers publish** documents, digital books and
-videos, and **students consume** them and track progress (`§1.2`). The source report proposes
-migrating ClassQuest's legacy, single-points-of-failure, fixed-capacity three-tier on-premises
-deployment to a highly available, elastic, secure AWS three-tier architecture (`§1.3`, `§3`).
+ClassQuest is a learning platform where **teachers publish** documents,
+digital books and videos — organised into **courses** — and **students open**
+them (`§1.2`). The report
+proposes moving a legacy on-premises three-tier deployment to a highly
+available, elastic, secure AWS three-tier architecture (`§1.3`, `§3`).
 
-This prototype demonstrates that architecture end-to-end: a decoupled **Web Tier → Application
-Tier → Data Tier (MySQL + S3) with an asynchronous SQS processing pipeline**, credential-less IAM
-access, lifecycle-tiered object storage, and CloudWatch→SNS monitoring (including the specific
-"more than 50 HTTP 400 errors per minute" alert, `§2.2.8`).
+The prototype demonstrates the architecture's core behaviour end to end: a
+**Web Tier → Application Tier → Data Tier (MySQL + S3)** with an
+**asynchronous SQS pipeline and worker**, dead-letter handling,
+lifecycle-tiered object storage, and CloudWatch-based monitoring of the
+report's specific alert ("more than 50 HTTP 400 errors per minute", `§2.2.8`).
 
----
+## 2. Implemented in this prototype vs production design
 
-## 2. Architectural Drivers
+| Concern | Implemented in this prototype | Production AWS architecture (report) |
+|---|---|---|
+| Entry / load balancing | Web Tier container (Express) on port 8080: serves SPA, rate limits, proxies `/api` | Route 53 → NLB → public ALB with TLS; internal ALB to the app tier (`§3.4`, `§4.7–4.8`) |
+| Compute | Docker containers: web-tier, app-tier, worker (scale with `--scale worker=N`) | EC2 Auto Scaling groups in private subnets across two AZs (`§5.1`) |
+| Network isolation | One Docker bridge network; MySQL and the App Tier ports are also published to the host for development/tests | VPC with public/private/DB subnets, security groups, NACLs (`§4`, `§6.4–6.5`) |
+| Database | MySQL 8 container (schema 5.7-compatible) | Amazon RDS for MySQL Multi-AZ (`§5.3`) |
+| Object storage | **S3 on LocalStack** via Terraform: versioning, Block Public Access, SSE, lifecycle rule | Amazon S3 with the same configuration (`§5.4`) |
+| Async processing | **SQS + DLQ on LocalStack** via Terraform; worker container | SQS + worker fleet (`§3.7`, `§10.10`) |
+| Monitoring | **CloudWatch Logs, metric filter, alarm on LocalStack** via Terraform; app metrics | CloudWatch with alarm evaluation (`§7.6–7.7`) |
+| Alerting | **SNS topic + email subscription on LocalStack** via Terraform; no email is delivered locally | SNS email to administrators (`§7.8`) |
+| Identity for services | **IAM roles/instance profiles on LocalStack** via Terraform; not enforced by LocalStack Community | IAM instance profiles, least privilege (`§2.3.6`, `§6.2`) |
+| Edge protection | Express rate limiting | AWS WAF and Shield (`§6.11`) |
+| Secrets | Environment variables (`.env`, git-ignored) | Secrets Manager / SSM (`§6.10`) |
+| Audit / threat detection | — | CloudTrail, Config, GuardDuty (`§6.13`) |
 
-| Driver | Source | How the architecture responds |
-|--------|--------|-------------------------------|
-| Eliminate single points of failure | `§2.2.3` | Decoupled stateless tiers; multi-AZ design; RDS Multi-AZ; managed LB. |
-| Handle school-schedule traffic spikes | `§2.2.4`, `§2.3.1` | Horizontally scalable tiers + async queue absorbing bursts. |
-| Scale storage independently of compute | `§2.1.5`, `§2.3.4` | S3 object storage decoupled from EC2. |
-| 5-year tiered retention | `§2.2.5`, `§5.4` | S3 lifecycle: Standard → Glacier @90d → expire @1825d. |
-| Credential-less, least-privilege access | `§2.3.6`, `§6.2` | IAM roles per service; Web read-only, App read/write. |
-| Alert on >50 HTTP 400 / min | `§2.2.8`, `§7.6` | CloudWatch Logs metric filter → alarm → SNS. |
-| Reproducibility / IaC | `§2.7` | Terraform; one-command Docker Compose stack. |
+**Terraform in this repository** (`infra/terraform`) provisions only S3, SQS
+(+DLQ), SNS, CloudWatch (log group, metric filter, alarm) and IAM roles. It
+does **not** provision a VPC, subnets, EC2, ALB/NLB, Route 53, RDS, WAF or
+Secrets Manager — those exist only in the report's design.
 
----
+## 3. Architectural drivers
 
-## 3. System Context Diagram
+| Driver | Source | Response |
+|--------|--------|----------|
+| Eliminate single points of failure | `§2.2.3` | Stateless decoupled tiers; production: multi-AZ + RDS Multi-AZ |
+| Absorb school-hour traffic spikes | `§2.2.4`, `§2.3.1` | SQS buffers work; workers scale horizontally |
+| Scale storage independently of compute | `§2.1.5`, `§2.3.4` | S3 object storage |
+| 5-year tiered retention | `§2.2.5`, `§5.4` | S3 lifecycle: Standard → Glacier @90 d → expire @1825 d |
+| Least-privilege service access | `§2.3.6`, `§6.2` | IAM roles per tier (provisioned; enforced on AWS only) |
+| Alert on >50 HTTP 400 / min | `§2.2.8`, `§7.6` | Access logs → metric filter → alarm → SNS |
+| Reproducibility | `§2.7` | Terraform + one-command Docker Compose stack |
+
+## 4. Logical architecture (as implemented)
 
 ```mermaid
 graph TD
-    student["Student<br/>(browse / consume)"]
-    teacher["Teacher<br/>(upload / publish)"]
-    admin["Administrator<br/>(monitor / alerts)"]
+    spa["React SPA<br/>Student: Home · Courses · My Progress<br/>Teacher: Dashboard · My Courses · Publish · Operations<br/>Admin: Operations · Library"]
 
-    subgraph CQ["ClassQuest Cloud System (prototype)"]
-        sys["Three-tier platform<br/>Web → App → Data + async pipeline"]
+    subgraph web["Web Tier (port 8080)"]
+        gw["Static SPA · rate limiting<br/>ALB-style access logs → CloudWatch Logs<br/>proxies /api/* (no JWT checks here)"]
     end
 
-    sns["📧 Email / SNS<br/>(admin alerting)"]
-    s3ext["Object storage lifecycle<br/>(Standard → Glacier)"]
-
-    student -->|"HTTPS: browse, retrieve assets"| sys
-    teacher -->|"HTTPS: upload documents/books/videos"| sys
-    admin -->|"HTTPS: dashboard, system status"| sys
-    sys -->|"HTTP 400 spike alert"| sns
-    sns -->|"notify"| admin
-    sys -->|"tier aged objects"| s3ext
-```
-
----
-
-## 4. Logical Architecture (three-tier, decoupled — §3.4)
-
-```mermaid
-graph TD
-    spa["React SPA<br/>(Library / Teacher Portal / Admin)"]
-
-    subgraph web["Presentation / Web Tier (§3.4, §4.8)"]
-        gw["Gateway + Web service<br/>JWT gate · rate limit (WAF stand-in)<br/>ALB-style access logs"]
-    end
-
-    subgraph app["Application Tier (§3.4)"]
-        api["Business logic API<br/>assets · jobs · dashboard · auth<br/>IAM role → S3/SQS/CW"]
+    subgraph app["Application Tier (port 4000)"]
+        api["JWT + role checks · zod validation<br/>courses · assets · jobs · dashboard metrics<br/>/me/progress · demo (DEMO_MODE)"]
     end
 
     subgraph data["Data Tier"]
-        mysql[("MySQL 8<br/>RDS-for-MySQL stand-in<br/>§5.3")]
-        s3[("Amazon S3<br/>media assets + lifecycle<br/>§5.4")]
+        mysql[("MySQL 8<br/>users · courses · assets · jobs<br/>request_metrics · resource_access")]
+        s3[("Amazon S3 (LocalStack)<br/>resources + lifecycle")]
     end
 
-    q["Amazon SQS<br/>asset-processing + DLQ<br/>§3.7, §10.10"]
-    worker["Worker(s)<br/>async processing<br/>scales by replicas"]
-    cw["CloudWatch Logs + Metrics<br/>metric filter: HTTP400ErrorCount<br/>§7.6"]
-    alarm["CloudWatch Alarm<br/>>50 / min → §7.7"]
-    sns["Amazon SNS<br/>classquest-admin-alerts §7.8"]
+    q["Amazon SQS (LocalStack)<br/>asset-processing → DLQ"]
+    worker["Worker(s)<br/>idempotent · retries · redrive"]
+    cw["CloudWatch Logs + Metrics (LocalStack)<br/>metric filter: HTTP400ErrorCount"]
+    alarm["CloudWatch Alarm >50/min"]
+    sns["SNS classquest-admin-alerts"]
 
     spa --> gw --> api
     api --> mysql
@@ -94,237 +93,244 @@ graph TD
     worker --> mysql
     worker --> cw
     gw -->|access logs| cw
-    cw --> alarm --> sns
+    cw --> alarm -.->|production design| sns
 ```
 
----
-
-## 5. Physical / Cloud Architecture (maps to §3.4, Figure 3)
+## 5. Production cloud architecture (report §3.4 — documented, not provisioned)
 
 ```mermaid
 graph TB
     users["Users (AU / NZ)"]
-
-    subgraph region["AWS Region ap-southeast-2 (Sydney) — prod target §3.2"]
-        r53["Amazon Route 53<br/>latency alias §4.7"]
-        nlb["Network Load Balancer<br/>L4 / TCP §3.4"]
-        palb["Public ALB<br/>L7 HTTP/HTTPS · TLS term §4.8"]
-
-        subgraph vpc["VPC 10.0.0.0/16 §4.1"]
-            subgraph az_a["AZ ap-southeast-2a"]
-                pub_a["Public subnet 10.0.1.0/24<br/>ALB · NAT GW"]
-                webapp_a["Private app subnet 10.0.10.0/24<br/>Web + App EC2 (ASG)"]
-                db_a["Private DB subnet 10.0.100.0/24<br/>RDS primary"]
+    subgraph region["AWS ap-southeast-2 (Sydney)"]
+        r53["Route 53"] --> nlb["NLB"] --> palb["Public ALB (TLS)"]
+        subgraph vpc["VPC 10.0.0.0/16"]
+            subgraph az_a["AZ a"]
+                webapp_a["Private app subnet<br/>Web + App EC2 (ASG)"]
+                db_a["DB subnet: RDS primary"]
             end
-            subgraph az_b["AZ ap-southeast-2b"]
-                pub_b["Public subnet 10.0.2.0/24<br/>ALB · NAT GW"]
-                webapp_b["Private app subnet 10.0.20.0/24<br/>Web + App EC2 (ASG)"]
-                db_b["Private DB subnet 10.0.200.0/24<br/>RDS standby"]
+            subgraph az_b["AZ b"]
+                webapp_b["Private app subnet<br/>Web + App EC2 (ASG)"]
+                db_b["DB subnet: RDS standby"]
             end
-            ialb["Internal ALB §3.4"]
+            ialb["Internal ALB"]
         end
-
-        s3["Amazon S3 (lifecycle) §5.4"]
-        sqs["Amazon SQS (+DLQ)"]
-        cw["CloudWatch"]
-        sns["SNS"]
-        iam["IAM roles §6.2"]
+        s3["S3 (lifecycle)"]; sqs["SQS (+DLQ)"]; cw["CloudWatch"]; sns["SNS"]; iam["IAM roles"]
     end
-
-    users --> r53 --> nlb --> palb --> webapp_a
-    palb --> webapp_b
+    users --> r53
+    palb --> webapp_a & webapp_b
     webapp_a --> ialb --> webapp_b
     webapp_a --> db_a
-    db_a <-->|"sync replication (Multi-AZ)"| db_b
-    webapp_a --> s3
-    webapp_a --> sqs --> webapp_b
-    webapp_a --> cw --> sns
-    iam -.->|"temporary creds"| webapp_a
-
-    classDef note fill:#eef,stroke:#88a;
+    db_a <-->|"sync replication"| db_b
+    webapp_a --> s3 & sqs & cw
+    cw --> sns
+    iam -.->|"temporary credentials"| webapp_a
 ```
 
-**Prototype realisation:** the VPC/subnet/AZ/Route53/NLB/ALB/ASG layer is represented by Docker
-Compose networking + an internal gateway and is fully described in Terraform for the `aws` target;
-S3, SQS, SNS, CloudWatch and IAM run as **real APIs on LocalStack**; RDS is a MySQL 8 container.
-See `README.md` §"Prototype vs Production fidelity".
+In the prototype this layer is represented by Docker Compose networking and the
+Web Tier container. See §2 for the mapping.
 
----
-
-## 6. Data Flow Diagram (upload → process → retrieve)
-
-```mermaid
-flowchart LR
-    A["Teacher selects file<br/>+ title + type"] --> B["Web Tier<br/>authn + validate + log"]
-    B --> C["App Tier<br/>validate (zod)"]
-    C --> D[["S3 putObject<br/>key: type/uuid §5.4.2"]]
-    C --> E[["MySQL insert asset<br/>status=submitted"]]
-    C --> F[["SQS enqueue job"]]
-    F --> G["Worker receive"]
-    G --> H["process<br/>(extract metadata / thumbnail stub)"]
-    H -->|ok| I[["MySQL status=completed<br/>CloudWatch SuccessCount"]]
-    H -->|error ≥ max| J[["SQS → DLQ<br/>MySQL status=failed §10.10"]]
-    I --> K["Student lists & opens asset"]
-    K --> L[["S3 presigned GET §4.9.6"]]
-```
-
----
-
-## 7. Sequence Diagram — primary end-to-end workflow (§3.7)
+## 6. Upload → process → open (as implemented)
 
 ```mermaid
 sequenceDiagram
     actor T as Teacher
     participant W as Web Tier
     participant A as App Tier
-    participant S as S3 (LocalStack)
+    participant S as S3
     participant DB as MySQL
     participant Q as SQS
     participant K as Worker
-    participant C as CloudWatch
-    participant N as SNS
 
-    T->>W: POST /assets (file, JWT)
-    W->>W: verify JWT, rate-limit, access-log
+    T->>W: POST /api/assets (file, JWT)
     W->>A: proxy POST /assets
-    A->>A: validate input
-    A->>S: putObject(type/uuid)
-    A->>DB: insert asset (submitted)
-    A->>Q: enqueue job
-    A-->>W: 202 {assetId, jobId}
-    W-->>T: 202 Accepted
+    A->>A: verify JWT + role, validate type/size
+    A->>S: putObject (documents/… or videos/…)
+    A->>DB: insert asset + job (submitted)
+    A->>DB: job + asset → queued
+    A->>Q: send message (only after the DB says queued)
+    A-->>T: 202 {assetId, jobId}
 
     K->>Q: long-poll receive
-    Q-->>K: job message
-    K->>DB: state=processing
-    K->>S: read/process object
+    K->>DB: claim job (queued → processing), conditional
+    K->>S: read object
     alt success
-        K->>DB: state=completed
-        K->>C: SuccessCount, ProcessingTimeMs
-    else failure (attempts >= max)
-        K->>Q: leave → redrive to DLQ
-        K->>DB: state=failed
-        K->>C: FailureCount
+        K->>DB: processing → completed
+        K->>Q: delete message
+    else failure, attempts remain
+        K->>DB: processing → queued (error recorded)
+        K->>Q: keep message, visible again after retry delay
+    else failure on attempt 3
+        K->>DB: processing → failed
+        K->>Q: keep message — next receive: SQS redrives it to the DLQ
     end
-
-    Note over W,C: every request → ALB-style access log in CloudWatch
-    C->>C: metric filter counts status_code=400
-    C->>N: alarm when >50/min (§7.7)
-    N-->>T: (admin) email alert (captured locally)
 ```
 
----
+Opening a resource: `GET /api/assets/:id` returns a 5-minute presigned S3 URL.
+Students only receive completed assets of published courses (others return
+404). For students, the same request records the open in `resource_access`.
 
-## 8. Deployment Diagram (prototype runtime — §11)
+## 7. Job processing and dead-letter handling
+
+- **Write order (race-free).** The App Tier stores the file, creates the asset
+  and job, moves both to `queued`, and only then sends the SQS message. If the
+  send fails, the job and asset are marked `failed` and the API returns 503.
+- **Idempotent worker.** Every state change is a conditional update that
+  follows the job state machine (`submitted → queued → processing →
+  completed | failed`, with `processing → queued` for retries). A completed or
+  failed job is never claimed again; duplicate deliveries are harmless.
+- **Native SQS redrive.** The worker never deletes a failing message. It makes
+  the message visible again after `WORKER_RETRY_DELAY_SECONDS` (default 5 s).
+  On the third delivery the job is marked `failed`; on the next receive SQS's
+  redrive policy (`maxReceiveCount = 3`, set in Terraform) moves the message to
+  `classquest-asset-processing-dlq`. The worker reads `maxReceiveCount` from
+  the queue at start-up so the two cannot drift apart.
+- **Known edge case.** If a worker crashes during the final attempt, SQS still
+  redrives the message, but the job can remain `processing` in MySQL.
+
+## 8. Courses
+
+A **course** groups resources; it is a domain layer on top of the unchanged
+asset pipeline (no new AWS services).
+
+```
+courses(id, title, description, category, cover_key, cover_content_type,
+        creator_id → users, status draft|published|archived, is_demo,
+        created_at, updated_at)
+assets(…existing columns…, course_id → courses NOT NULL, description,
+       section_label NULL, display_order)
+```
+
+- **Lifecycle.** `draft → published → draft`, `draft|published → archived`,
+  `archived → draft` (never straight back to published). Teachers manage only
+  the courses they created; admins manage any course.
+- **Visibility.** Students see a resource only when it is `completed` **and**
+  its course is `published` — in `GET /courses`, `GET /courses/:id`,
+  `GET /assets` and `GET /assets/:id` (presigned URL) alike. Drafts and
+  archived courses answer 404 to students. Archived courses keep their
+  resources and access history but accept no new resources.
+- **Upload into a course.** `POST /assets` requires `courseId` (plus optional
+  `description`, `sectionLabel`, `displayOrder`). The App Tier checks the
+  course (exists, caller manages it, not archived) and then runs the same
+  `publishAsset` write order as before: S3 → MySQL (`submitted → queued`) →
+  SQS → Worker.
+- **Order.** `display_order` (ascending, ties by creation time); new
+  resources are appended. `PUT /courses/:id/order` re-numbers the whole list
+  in one transaction.
+- **Covers.** Optional PNG/JPEG/WebP (≤ 2 MB) stored in the same bucket under
+  `pictures/covers/<courseId>/` and shown through 15-minute presigned URLs;
+  without one, a category-tinted placeholder is drawn. The Web Tier CSP allows
+  images from the browser-facing S3 endpoint for this.
+
+**Migration (additive, idempotent, under a MySQL named lock).** The App Tier
+creates `courses`, adds the four asset columns (with `course_id` nullable at
+first), then gives any asset without a course to one generated, **published**
+course, *General Library* (fixed id `00000000-0000-4000-8000-000000000001`,
+owned by the uploader of the oldest such asset), and finally makes
+`course_id` `NOT NULL` with an index and a foreign key. This was preferred
+over leaving `course_id` nullable: every resource then belongs to exactly one
+course, the student visibility rule has no "unassigned" special case, and
+students keep exactly the access they had before the upgrade. Teachers can
+move those resources into other courses from the course page.
+
+## 9. Student progress (resource access)
+
+`resource_access(user_id, asset_id, first_opened_at, last_opened_at,
+open_count)` records which completed resources each student has opened. An
+open is recorded only when a student successfully obtains a presigned URL; a
+tracking failure never blocks access. `GET /me/progress` (students only)
+returns `available`, `opened`, `coverage`, `lastOpenedAt`, per-type counts,
+per-course counts (`courses[]`: opened, available, coverage) and recent opens.
+Only completed resources of published courses count, on both sides, so
+`opened ≤ available` everywhere.
+
+This is **access tracking only** — it does not measure grades, mastery, time
+spent or lesson completion.
+
+## 10. Deployment (prototype runtime)
 
 ```mermaid
 graph TD
-    subgraph host["Developer host / CI"]
-        subgraph dc["Docker Compose network (tier isolation = SG/NACL stand-in §6.4)"]
-            ls["localstack<br/>S3·SQS·SNS·CloudWatch·IAM"]
-            tf["terraform (one-shot apply)"]
-            my["mysql:8"]
-            at["app-tier (Node)"]
-            wt["web-tier (Node) + static SPA"]
-            wk["worker (Node) ×N replicas"]
-        end
+    subgraph dc["Docker Compose network cq-net"]
+        ls["localstack :4566<br/>S3 · SQS · SNS · CloudWatch · Logs · IAM · STS"]
+        tf["terraform (one-shot apply)"]
+        my["mysql :3306"]
+        at["app-tier :4000"]
+        wt["web-tier :8080 (+ SPA)"]
+        wk["worker × N"]
     end
     browser["Browser"] --> wt --> at
-    at --> my
-    at --> ls
-    wk --> ls
-    wk --> my
+    at --> my & ls
+    wk --> my & ls
     tf --> ls
 ```
 
----
+Start order: LocalStack and MySQL (healthy) → Terraform apply → App Tier
+(migrates schema, creates demo users) → Worker and Web Tier.
 
-## 9. Component Descriptions
+## 11. Components
 
 | Component | Responsibility | Report § |
 |-----------|----------------|----------|
-| `apps/frontend` | React SPA; role-based UI; dashboard. | §15 metrics |
-| `services/web-tier` | Public entry; JWT gate; rate limit; proxy; ALB-style access logs. | §4.8, §6.11, §7.6 |
-| `services/app-tier` | Business logic; S3/SQS/MySQL via IAM role; APIs; demo mode. | §3.4, §6.2 |
-| `services/worker` | Async job processor; state machine; retry/DLQ; metrics. | §3.7, §10.10 |
-| `packages/shared` | Cloud service clients, auth, domain, DB, logging. | §6, §7 |
-| `infra/terraform` | S3/SQS/SNS/CloudWatch/IAM as code; dual targets. | §2.7, §3.9 |
+| `apps/frontend` | React SPA; role-based routes and navigation | §15 |
+| `services/web-tier` | Public entry; SPA; rate limiting; access logs to CloudWatch; `/api` proxy | §4.8, §6.11, §7.6 |
+| `services/app-tier` | Auth, authorisation, validation; assets, jobs, metrics, progress, demo | §3.4 |
+| `services/worker` | SQS consumer; idempotent processing; retries; redrive | §3.7, §10.10 |
+| `packages/shared` | Config, logging, domain, DB + migrations, AWS clients | §6, §7 |
+| `infra/terraform` | S3, SQS + DLQ, SNS, CloudWatch, IAM (LocalStack or AWS target) | §2.7, §3.9 |
 
----
+## 12. Security (summary — see `SECURITY.md`)
 
-## 10. Security Architecture (§6, NFR-5)
+- JWT (1 h) + bcrypt; role checks in the **App Tier** on every protected route.
+  The Web Tier only proxies.
+- Students: completed assets only, own progress only. Job endpoints, metrics,
+  uploads and demo management: teacher/admin.
+- Demo endpoints exist only when `DEMO_MODE=true`.
+- S3 Block Public Access; downloads via short-lived presigned URLs only.
+- zod validation and a file-type/size allow-list; parameterised SQL.
 
-- **Human auth**: JWT (short expiry) + bcrypt + RBAC (`student`/`teacher`/`admin`).
-- **Service auth**: IAM role assumption → temporary creds; **no static keys in code** (`§6.10`).
-- **Least privilege**: Web role = `s3:GetObject` + `logs:PutLogEvents`; App role adds `s3:Put*`,
-  `sqs:*` (scoped), `cloudwatch:PutMetricData` — mirrors `§2.3.6` web-read / app-write split.
-- **Network isolation**: Compose private network; DB reachable only from app/worker (SG/NACL
-  stand-in, `§6.4–§6.5`). Terraform models private subnets + tiered SGs for the `aws` target.
-- **Input validation** (zod) + file type/size allow-list on every endpoint (`§13`).
-- **Edge protection**: Web Tier rate limiting as WAF/Shield stand-in (`§6.11`).
-- **Data protection**: S3 Block Public Access + presigned-URL-only retrieval (`§5.4.7`); SSE and
-  TLS 1.3 documented for prod (`§6.8`, `§6.12`).
-- **Sanitized errors**: client sees `{code,message,requestId}`; internals only in logs (`§6`).
+## 13. Scalability and availability
 
----
+- Web, App and Worker tiers are stateless; workers scale with
+  `docker compose up -d --scale worker=3`.
+- SQS decouples upload from processing, absorbing bursts.
+- Production availability (multi-AZ, RDS failover, health-checked load
+  balancers) is part of the report design, not exercised locally.
 
-## 11. Scalability & Elasticity Approach (§10.1–§10.2, NFR-2/3)
+## 14. Monitoring
 
-- Web/App/Worker are **stateless** → scale by replica count (EC2 ASG analogue).
-- The **SQS queue decouples ingest from processing**, absorbing the 08:30 login/upload spike
-  (`§2.2.4`); throughput scales by adding workers (demonstrated by `docker compose up --scale`).
-- **S3** scales storage independently of compute (`§2.3.4`).
-- Prod design uses target-tracking ASGs at 70% CPU (`§3.9.2`, `§5.1.8`) — documented, with the
-  replica-scaling demonstration as the local analogue.
+- Structured JSON logs (pino) with secret redaction.
+- Web Tier writes one ALB-style JSON access-log event per request to
+  CloudWatch Logs; Terraform defines a metric filter on `status_code = 400`
+  and an alarm at >50 per 60 s with an SNS action.
+- The App Tier keeps its own request log in MySQL; Operations shows HTTP 400s
+  from that log because LocalStack Community does not evaluate the alarm.
+- See `docs/OBSERVABILITY.md`.
 
----
+## 15. Failure scenarios
 
-## 12. Availability & Reliability Approach (§10.3–§10.5, NFR-1/4)
+| Scenario | Behaviour |
+|----------|-----------|
+| Worker crashes mid-job | Message reappears after its visibility timeout; job re-claimed |
+| Processing keeps failing | Two retries, job `failed` on attempt 3, SQS redrives message to the DLQ |
+| Duplicate SQS delivery | Ignored for completed jobs; failed jobs left for redrive |
+| SQS unavailable during upload | Job/asset marked `failed`, API returns 503 |
+| MySQL, S3 or SQS down | `/health` returns 503; Operations shows the service as unavailable |
+| CloudWatch or SNS down | `/health` reports `degraded-observability` (200); app keeps serving |
+| Invalid upload | 400/413 with a sanitised message; nothing stored |
 
-- Multi-AZ design across `ap-southeast-2a/2b`; RDS Multi-AZ synchronous standby, <60s failover
-  (`§5.3.4`). Prototype **simulates** failover (stop primary MySQL → documented recovery).
-- Health checks isolate/replace unhealthy instances (`§5.1.6`); `/health` reports per-dependency.
-- Retry + DLQ for processing failures (`§10.10`); versioned S3 guards against overwrite (`§5.4.6`).
+## 16. Prototype limitations
 
----
-
-## 13. Monitoring / Observability (§7, NFR-6)
-
-- Structured JSON logs with `requestId`, tier, route, status, latency.
-- Web Tier emits an **ALB-style access-log line per request** to CloudWatch Logs.
-- Custom metrics: `RequestCount`, `SuccessCount`, `FailureCount`, `ProcessingTimeMs`, `QueueDepth`.
-- **HTTP-400 pipeline** (the report's headline monitoring requirement): metric filter on
-  `status_code=400` → `HTTP400ErrorCount` → alarm `>50`/min → SNS `classquest-admin-alerts`
-  (`§7.6–§7.8`). Fully reproducible on LocalStack via the demo "400 burst" control.
-- `/dashboard/metrics` aggregates real values (no decorative numbers — brief §20).
-
----
-
-## 14. Failure Scenarios
-
-| Scenario | Behaviour | Mechanism |
-|----------|-----------|-----------|
-| Worker crashes mid-job | Message visibility timeout expires → redelivered | SQS visibility timeout |
-| Repeated processing failure | After 3 attempts → DLQ, asset `failed`, UI shows error | SQS redrive policy §10.10 |
-| App Tier dependency down (S3/SQS/MySQL) | `503`, tier marked degraded | `/health` + error middleware |
-| HTTP 400 spike (bad clients) | Alarm fires, SNS alert | CloudWatch metric filter + alarm §7.7 |
-| AZ / DB primary failure | Failover to standby (simulated) | RDS Multi-AZ §5.3.4 (documented) |
-| Invalid upload (type/size) | `400` with sanitized message, no S3 write | zod validation §13 |
-
----
-
-## 15. Prototype Limitations (brief §4, §20; report §12.9)
-
-1. RDS is a MySQL 8 container, not a managed Multi-AZ RDS instance; failover is simulated.
-   The CloudWatch **metric filter and metric data are real** (the `>50 HTTP 400/min`
-   breach is measured and recorded on LocalStack), but LocalStack **Community** does not
-   run the alarm *evaluation* engine that transitions an alarm's `StateValue` to `ALARM`
-   from metric data (that requires LocalStack Pro or real AWS). The alarm resource, metric
-   filter, threshold and SNS wiring are all provisioned correctly; only the automatic
-   state transition is unavailable locally.
-2. Route 53 / NLB / ALB / Auto Scaling / VPC subnets / WAF / Shield are modelled in Terraform and
-   behaviour, not provisioned as live AWS control-plane resources.
-3. SNS email delivery is captured by LocalStack, not sent to a real inbox.
-4. S3 Glacier retrieval latency (`§10.11`) is not emulated; tier transition is reported, not timed.
-5. All learning content is synthetic sample data (labelled `DEMO/SAMPLE`); no real student data.
-6. No real TLS/billing/DNS. See `RESEARCH_TRACEABILITY.md` for per-requirement status.
+1. Only S3, SQS, SNS, CloudWatch and IAM are provisioned (on LocalStack); the
+   production network/compute/database layer is documented only (§2).
+2. LocalStack Community does not evaluate CloudWatch alarm state from metric
+   data, so the HTTP 400 alarm is not expected to reach `ALARM` locally; SNS
+   email is never delivered.
+3. Glacier is simulated on demand by rewriting objects with the `GLACIER`
+   storage class; restore and retrieval latency are not emulated.
+4. IAM is not enforced by LocalStack Community, and the app role does not yet
+   include every action the app performs (see `SECURITY.md`).
+5. The Teacher Dashboard's pipeline counts and Recent Resources are
+   library-wide; only its *My Courses* card is limited to the teacher's own
+   courses. There are no per-teacher or per-student analytics.
+6. Worker "processing" only reads the object back from S3.
+7. All data is synthetic `DEMO/SAMPLE`; no real TLS, DNS or billing locally.

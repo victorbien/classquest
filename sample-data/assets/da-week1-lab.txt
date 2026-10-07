@@ -1,0 +1,10 @@
+DEMO / SAMPLE CONTENT — not real course material.
+
+Data Analytics
+==============
+Week 1 Lab Sheet: Cleaning Data with Python  (Week 1)
+
+Step-by-step lab on missing values, types and duplicates.
+
+(This file is synthetic sample data used to demonstrate the ClassQuest
+cloud prototype's course -> upload -> process -> open workflow.)

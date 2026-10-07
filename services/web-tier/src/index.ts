@@ -27,6 +27,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.disable('x-powered-by');
 
+// Course cover images are shown from time-limited S3 links, so img-src also
+// allows the browser-facing S3 endpoint (LocalStack locally, S3 on AWS).
+const s3ImageOrigins = cfg.s3PublicEndpoint
+  ? [new URL(cfg.s3PublicEndpoint).origin]
+  : [`https://${cfg.s3Bucket}.s3.${cfg.awsRegion}.amazonaws.com`, `https://s3.${cfg.awsRegion}.amazonaws.com`];
+
 // Security headers. CSP is relaxed to allow the SPA's inline bootstrap and
 // same-origin API/XHR; tighten for a real production deployment (report 6).
 app.use(
@@ -36,7 +42,7 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:'],
+        imgSrc: ["'self'", 'data:', ...s3ImageOrigins],
         connectSrc: ["'self'"],
       },
     },

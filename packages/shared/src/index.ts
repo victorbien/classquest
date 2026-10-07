@@ -8,6 +8,7 @@ export * from './logger.js';
 export * from './domain/types.js';
 export * from './domain/jobStateMachine.js';
 export * from './domain/schemas.js';
+export * from './domain/courseStatus.js';
 
 // database
 export * from './db/pool.js';

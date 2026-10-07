@@ -10,6 +10,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  DeleteObjectCommand,
   ListBucketsCommand,
   type StorageClass as S3StorageClass,
 } from '@aws-sdk/client-s3';
@@ -32,6 +33,20 @@ export class StorageService {
   buildKey(type: AssetType, originalName: string): string {
     const safe = originalName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
     return `${ASSET_PREFIX[type]}/${randomUUID()}-${safe}`;
+  }
+
+  /**
+   * S3 key for a course cover image: `pictures/covers/<courseId>/<uuid>-<safeName>`
+   * (the report's pictures/ prefix, 5.4.2).
+   */
+  buildCoverKey(courseId: string, originalName: string): string {
+    const safe = originalName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
+    return `pictures/covers/${courseId}/${randomUUID()}-${safe}`;
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    await s3Client().send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
+    log.info({ bucket: this.bucket, key }, 'deleteObject');
   }
 
   async putObject(key: string, body: Buffer, contentType: string): Promise<void> {

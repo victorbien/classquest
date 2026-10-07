@@ -12,6 +12,7 @@ import { SQSClient } from '@aws-sdk/client-sqs';
 import { SNSClient } from '@aws-sdk/client-sns';
 import { CloudWatchClient } from '@aws-sdk/client-cloudwatch';
 import { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs';
+import { AwsQueryProtocol } from '@aws-sdk/core/protocols';
 import { loadConfig } from '../config.js';
 
 function common() {
@@ -63,8 +64,18 @@ export function sqsClient(): SQSClient {
 export function snsClient(): SNSClient {
   return (sns ??= new SNSClient(common()));
 }
+/**
+ * Wire protocol for CloudWatch (monitoring). Recent SDK versions default to
+ * AWS JSON 1.0 with x-amzn-query-mode; LocalStack 3.5 only parses the Query
+ * protocol (form-encoded Action=...) and answers JSON requests with an XML
+ * HTTP 500 ("Missing Action in request for query-protocol service"). Real
+ * CloudWatch accepts both, so Query is used everywhere. CloudWatch Logs is a
+ * separate JSON service and is unaffected.
+ */
+export const CLOUDWATCH_PROTOCOL = AwsQueryProtocol;
+
 export function cloudWatchClient(): CloudWatchClient {
-  return (cw ??= new CloudWatchClient(common()));
+  return (cw ??= new CloudWatchClient({ ...common(), protocol: CLOUDWATCH_PROTOCOL }));
 }
 export function cloudWatchLogsClient(): CloudWatchLogsClient {
   return (cwLogs ??= new CloudWatchLogsClient(common()));

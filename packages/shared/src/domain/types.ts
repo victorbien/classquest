@@ -31,10 +31,41 @@ export type JobState =
   | 'completed'
   | 'failed';
 
+/**
+ * Course lifecycle. Students only ever see `published` courses; `archived`
+ * courses are kept (with their resources and access history) but hidden.
+ */
+export type CourseStatus = 'draft' | 'published' | 'archived';
+
+export interface Course {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  /** S3 key of the optional cover image (covers/ prefix); null = placeholder. */
+  coverKey: string | null;
+  coverContentType: string | null;
+  creatorId: string;
+  creatorName: string;
+  status: CourseStatus;
+  isDemo: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A resource (asset) always belongs to exactly one course. */
 export interface Asset {
   id: string;
   ownerId: string;
+  courseId: string;
+  courseTitle: string;
+  courseStatus: CourseStatus;
   title: string;
+  description: string;
+  /** Optional grouping label shown on the course page, e.g. "Week 1". */
+  sectionLabel: string | null;
+  /** Position within the course (ascending; ties fall back to creation time). */
+  displayOrder: number;
   type: AssetType;
   s3Key: string;
   s3Bucket: string;

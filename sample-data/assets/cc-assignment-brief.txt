@@ -1,0 +1,10 @@
+DEMO / SAMPLE CONTENT — not real course material.
+
+Cloud Computing
+===============
+Assignment Brief: Cloud Migration Proposal  (Assessment)
+
+Task description, deliverables and marking criteria for the migration proposal.
+
+(This file is synthetic sample data used to demonstrate the ClassQuest
+cloud prototype's course -> upload -> process -> open workflow.)

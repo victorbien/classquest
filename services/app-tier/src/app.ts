@@ -2,7 +2,7 @@
 import express, { type Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { requireAuth } from '@classquest/shared';
+import { requireAuth, loadConfig } from '@classquest/shared';
 import { requestContext, recordMetrics, notFound, errorHandler } from './middleware.js';
 import { authRouter } from './routes/auth.js';
 import { assetsRouter } from './routes/assets.js';
@@ -10,6 +10,8 @@ import { jobsRouter } from './routes/jobs.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { healthRouter } from './routes/health.js';
 import { demoRouter } from './routes/demo.js';
+import { meRouter } from './routes/me.js';
+import { coursesRouter } from './routes/courses.js';
 
 export function createApp(): Express {
   const app = express();
@@ -29,12 +31,17 @@ export function createApp(): Express {
   app.use('/auth', authRouter);
 
   // Core business logic.
+  app.use('/courses', coursesRouter);
   app.use('/assets', assetsRouter);
   app.use('/jobs', jobsRouter);
   app.use('/dashboard', dashboardRouter);
+  app.use('/me', meRouter);
 
-  // Demo mode (brief §18).
-  app.use('/demo', demoRouter);
+  // Demo mode (brief §18): only mounted when DEMO_MODE is enabled; otherwise
+  // /demo/* falls through to 404.
+  if (loadConfig().demoMode) {
+    app.use('/demo', demoRouter);
+  }
 
   app.use(notFound);
   app.use(errorHandler);

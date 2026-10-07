@@ -35,6 +35,19 @@ export function assertTransition(from: JobState, to: JobState): void {
   }
 }
 
+/** States from which `to` may be entered — used for conditional (race-safe) DB updates. */
+export function sourcesFor(to: JobState): JobState[] {
+  return (Object.keys(TRANSITIONS) as JobState[]).filter((from) => TRANSITIONS[from].includes(to));
+}
+
+/**
+ * States a worker may claim a job from. `queued` is the normal case;
+ * `processing` covers redelivery after a worker crashed mid-attempt (the
+ * message reappears after its visibility timeout). Terminal states are never
+ * claimable, so a completed/failed job can never return to processing.
+ */
+export const CLAIMABLE_STATES: readonly JobState[] = ['queued', 'processing'];
+
 export function isTerminal(state: JobState): boolean {
   return TRANSITIONS[state].length === 0;
 }

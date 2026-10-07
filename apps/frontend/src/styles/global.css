@@ -1,0 +1,39 @@
+/* Base elements + typography scale. */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  background: var(--cq-bg);
+  color: var(--cq-text);
+  font: var(--cq-text-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+a { color: var(--cq-primary); text-decoration: none; }
+a:hover { color: var(--cq-primary-hover); }
+
+h1, h2, h3, h4, p { margin: 0; }
+
+:focus-visible { outline: none; box-shadow: var(--cq-focus-ring); border-radius: var(--cq-radius-sm); }
+
+/* ---- typography helpers ---- */
+.cq-page-title { font: var(--cq-text-page-title); letter-spacing: -0.02em; color: var(--cq-text); }
+.cq-card-title { font: var(--cq-text-card-title); color: var(--cq-text); }
+.cq-body { font: var(--cq-text-body); color: var(--cq-text-muted); }
+.cq-small { font: var(--cq-text-small); color: var(--cq-text-muted); }
+.cq-eyebrow {
+  font: var(--cq-text-eyebrow);
+  letter-spacing: var(--cq-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--cq-text-muted);
+}
+.cq-kpi { font: var(--cq-text-kpi); letter-spacing: -0.02em; color: var(--cq-text); }
+
+.cq-visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

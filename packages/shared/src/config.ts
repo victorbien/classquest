@@ -21,6 +21,12 @@ function envNum(name: string, fallback: number): number {
   return n;
 }
 
+function envBool(name: string, fallback: boolean): boolean {
+  const v = process.env[name];
+  if (v === undefined || v === '') return fallback;
+  return v === 'true' || v === '1';
+}
+
 export interface AppConfig {
   cloudTarget: 'localstack' | 'aws';
   awsRegion: string;
@@ -54,9 +60,12 @@ export interface AppConfig {
   appTierUrl: string;
 
   worker: {
+    /** Fallback only: the queue's redrive maxReceiveCount is authoritative when readable. */
     maxAttempts: number;
     pollWaitSeconds: number;
     visibilityTimeout: number;
+    /** Seconds a failed message stays invisible before SQS redelivers (or redrives) it. */
+    retryDelaySeconds: number;
   };
 
   http400: {
@@ -70,6 +79,9 @@ export interface AppConfig {
   };
 
   maxUploadBytes: number;
+
+  /** Enables /demo/* and auto-creation of demo users. Defaults on for LocalStack only. */
+  demoMode: boolean;
 }
 
 let cached: AppConfig | undefined;
@@ -116,6 +128,7 @@ export function loadConfig(): AppConfig {
       maxAttempts: envNum('WORKER_MAX_ATTEMPTS', 3),
       pollWaitSeconds: envNum('WORKER_POLL_WAIT_SECONDS', 5),
       visibilityTimeout: envNum('WORKER_VISIBILITY_TIMEOUT', 30),
+      retryDelaySeconds: envNum('WORKER_RETRY_DELAY_SECONDS', 5),
     },
 
     http400: {
@@ -129,6 +142,8 @@ export function loadConfig(): AppConfig {
     },
 
     maxUploadBytes: envNum('MAX_UPLOAD_BYTES', 52_428_800),
+
+    demoMode: envBool('DEMO_MODE', env('CLOUD_TARGET', 'localstack') === 'localstack'),
   };
 
   return cached;

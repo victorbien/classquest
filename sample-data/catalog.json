@@ -1,34 +1,112 @@
 [
   {
-    "title": "DEMO — Introduction to Algebra (Year 8 Maths)",
+    "course": "Cloud Computing",
+    "order": 0,
+    "section": "Week 1",
+    "title": "Week 1 Lecture Slides: Cloud Service Models",
+    "description": "IaaS, PaaS and SaaS compared, with the shared-responsibility model.",
     "type": "document",
-    "contentType": "text/plain",
-    "filename": "intro-to-algebra.txt",
-    "subject": "Mathematics",
-    "yearLevel": "Year 8"
+    "contentType": "application/pdf",
+    "filename": "cc-week1-slides.pdf"
   },
   {
-    "title": "DEMO — The Solar System (Year 8 Science)",
-    "type": "document",
-    "contentType": "text/plain",
-    "filename": "solar-system.txt",
-    "subject": "Science",
-    "yearLevel": "Year 8"
-  },
-  {
-    "title": "DEMO — The Giver, Study Guide (Year 9 English)",
+    "course": "Cloud Computing",
+    "order": 1,
+    "section": "Week 1",
+    "title": "AWS Architecture Guide",
+    "description": "Reference reading on regions, availability zones and the core AWS services used in this course.",
     "type": "book",
     "contentType": "application/pdf",
-    "filename": "the-giver-study-guide.pdf",
-    "subject": "English",
-    "yearLevel": "Year 9"
+    "filename": "cc-aws-architecture-guide.pdf"
   },
   {
-    "title": "DEMO — Planetary Orbits (sample video stub)",
+    "course": "Cloud Computing",
+    "order": 2,
+    "section": "Week 2",
+    "title": "Week 2 Recording: Elastic Compute and Auto Scaling",
+    "description": "Lecture recording on EC2, load balancing and scaling policies.",
     "type": "video",
     "contentType": "video/mp4",
-    "filename": "planetary-orbits.mp4",
-    "subject": "Science",
-    "yearLevel": "Year 8"
+    "filename": "cc-week2-recording.mp4"
+  },
+  {
+    "course": "Cloud Computing",
+    "order": 3,
+    "section": "Assessment",
+    "title": "Assignment Brief: Cloud Migration Proposal",
+    "description": "Task description, deliverables and marking criteria for the migration proposal.",
+    "type": "document",
+    "contentType": "text/plain",
+    "filename": "cc-assignment-brief.txt"
+  },
+  {
+    "course": "Applied Blockchain",
+    "order": 0,
+    "section": "Week 1",
+    "title": "Week 1 Lecture Notes: Distributed Ledgers",
+    "description": "Blocks, hashes and why a shared ledger needs consensus.",
+    "type": "document",
+    "contentType": "text/plain",
+    "filename": "ab-week1-notes.txt"
+  },
+  {
+    "course": "Applied Blockchain",
+    "order": 1,
+    "section": "Week 2",
+    "title": "Smart Contracts Primer",
+    "description": "Short reading on smart-contract design patterns and common pitfalls.",
+    "type": "book",
+    "contentType": "application/pdf",
+    "filename": "ab-smart-contracts-primer.pdf"
+  },
+  {
+    "course": "Applied Blockchain",
+    "order": 2,
+    "section": "Week 2",
+    "title": "Week 2 Recording: Consensus Mechanisms",
+    "description": "Proof of work, proof of stake and permissioned consensus compared.",
+    "type": "video",
+    "contentType": "video/mp4",
+    "filename": "ab-week2-recording.mp4"
+  },
+  {
+    "course": "Data Analytics",
+    "order": 0,
+    "section": "Week 1",
+    "title": "Week 1 Lecture Slides: Descriptive Statistics",
+    "description": "Measures of centre and spread, with worked examples.",
+    "type": "document",
+    "contentType": "application/pdf",
+    "filename": "da-week1-slides.pdf"
+  },
+  {
+    "course": "Data Analytics",
+    "order": 1,
+    "section": "Week 1",
+    "title": "Week 1 Lab Sheet: Cleaning Data with Python",
+    "description": "Step-by-step lab on missing values, types and duplicates.",
+    "type": "document",
+    "contentType": "text/plain",
+    "filename": "da-week1-lab.txt"
+  },
+  {
+    "course": "Data Analytics",
+    "order": 2,
+    "section": "Week 2",
+    "title": "Week 2 Recording: Visualising Distributions",
+    "description": "Histograms, box plots and choosing the right chart.",
+    "type": "video",
+    "contentType": "video/mp4",
+    "filename": "da-week2-recording.mp4"
+  },
+  {
+    "course": "Cybersecurity Essentials",
+    "order": 0,
+    "section": "Overview",
+    "title": "Course Outline (in preparation)",
+    "description": "Draft outline of topics and weekly schedule.",
+    "type": "document",
+    "contentType": "text/plain",
+    "filename": "cs-course-outline.txt"
   }
 ]

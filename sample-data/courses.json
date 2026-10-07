@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Cloud Computing",
+    "category": "Computer Science",
+    "status": "published",
+    "description": "Cloud service models, AWS core services and how to design a resilient, cost-aware architecture. Weekly slides, readings and recordings plus the assignment brief."
+  },
+  {
+    "title": "Applied Blockchain",
+    "category": "Information Systems",
+    "status": "published",
+    "description": "Distributed ledgers, consensus and smart contracts, with a focus on where blockchain is (and is not) a good fit for real systems."
+  },
+  {
+    "title": "Data Analytics",
+    "category": "Data Science",
+    "status": "published",
+    "description": "From raw data to insight: descriptive statistics, data cleaning in Python and visualising distributions."
+  },
+  {
+    "title": "Cybersecurity Essentials",
+    "category": "Computer Science",
+    "status": "draft",
+    "description": "Threats, controls and secure-by-design thinking. Still being prepared, so it is a draft and not visible to students."
+  }
+]

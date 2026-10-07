@@ -1,0 +1,10 @@
+DEMO / SAMPLE CONTENT — not real course material.
+
+Applied Blockchain
+==================
+Week 1 Lecture Notes: Distributed Ledgers  (Week 1)
+
+Blocks, hashes and why a shared ledger needs consensus.
+
+(This file is synthetic sample data used to demonstrate the ClassQuest
+cloud prototype's course -> upload -> process -> open workflow.)
