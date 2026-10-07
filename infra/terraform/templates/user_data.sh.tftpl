@@ -27,36 +27,25 @@ retry() {
 
 echo "=== ClassQuest bootstrap starting at $(date -u) ==="
 
-# ---- 1. Install Docker + git ----
-# dnf update is best-effort: a transient mirror hiccup must not abort the run.
+# ---- 1. Install Docker Engine + buildx + compose from Docker's official repo ----
+# Amazon Linux 2023's packaged docker does NOT ship the buildx plugin, and
+# `docker compose --build` requires it ("compose build requires buildx 0.17.0
+# or later"). Docker's official CE repo provides docker-ce + the buildx and
+# compose plugins installed into the path the CLI expects, so they integrate
+# correctly. git is still from the AL2023 repo.
 dnf update -y || echo "WARN: dnf update failed (continuing)"
-retry dnf install -y docker git
+retry dnf install -y git dnf-plugins-core
+
+# Docker's RPM repo (the EL9-compatible repo works on AL2023).
+retry dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+retry dnf install -y --allowerasing docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
 systemctl enable --now docker
 
 # Wait until the Docker daemon actually answers before using it.
 retry docker info
 
-# ---- Docker CLI plugins: buildx (required by `compose --build`) + compose ----
-# `docker compose build` delegates to buildx, so buildx must be present or the
-# build fails with "compose build requires buildx 0.17.0 or later".
-mkdir -p /usr/libexec/docker/cli-plugins
-
-# buildx
-if ! retry curl -fSL "https://github.com/docker/buildx/releases/latest/download/buildx-linux-amd64" \
-      -o /usr/libexec/docker/cli-plugins/docker-buildx; then
-  echo "WARN: buildx download failed; trying dnf docker-buildx-plugin"
-  dnf install -y docker-buildx-plugin || true
-fi
-chmod +x /usr/libexec/docker/cli-plugins/docker-buildx 2>/dev/null || true
-
-# compose
-if ! retry curl -fSL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
-      -o /usr/libexec/docker/cli-plugins/docker-compose; then
-  echo "WARN: compose plugin download failed; trying dnf docker-compose-plugin"
-  dnf install -y docker-compose-plugin || true
-fi
-chmod +x /usr/libexec/docker/cli-plugins/docker-compose 2>/dev/null || true
-
+# Verify both plugins resolve before relying on them.
 docker buildx version || { echo "FATAL: docker buildx unavailable"; exit 1; }
 docker compose version || { echo "FATAL: docker compose plugin unavailable"; exit 1; }
 
