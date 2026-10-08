@@ -36,7 +36,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "media" {
 }
 
 # 5-year tiered retention: Standard -> Glacier @90d -> expire @1825d (report 5.4.5)
-resource "aws_s3_bucket_lifecycle_configuration" "media" {
+/* resource "aws_s3_bucket_lifecycle_configuration" "media" {
   bucket = aws_s3_bucket.media.id
 
   rule {
@@ -59,4 +59,4 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
       noncurrent_days = var.expiration_days
     }
   }
-}
+} */

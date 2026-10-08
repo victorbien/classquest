@@ -10,7 +10,7 @@ export type IconName =
   | 'bell' | 'search' | 'logout' | 'chevron-down' | 'inbox' | 'lock'
   | 'document' | 'book' | 'video' | 'external' | 'upload-cloud' | 'check' | 'x' | 'alert' | 'refresh'
   | 'database' | 'archive' | 'queue' | 'server' | 'globe' | 'cpu' | 'clock' | 'arrow-right' | 'zap' | 'snowflake' | 'terminal' | 'info'
-  | 'course' | 'plus' | 'edit' | 'arrow-up' | 'arrow-down' | 'arrow-left' | 'image' | 'user' | 'layers';
+  | 'course' | 'plus' | 'edit' | 'arrow-up' | 'arrow-down' | 'arrow-left' | 'image' | 'user' | 'layers' | 'trash';
 
 export interface RouteDef {
   /** Path pattern; `:name` segments match any single segment. */

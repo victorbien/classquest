@@ -240,6 +240,29 @@ export const assetRepo = {
     await getPool().query('UPDATE assets SET status = ? WHERE id = ?', [status, id]);
   },
 
+  /**
+   * Permanently delete a resource and everything that references it. The
+   * foreign keys from jobs and resource_access to assets do not cascade, so
+   * the dependent rows are removed first, all in one transaction. Returns
+   * false when no asset with that id existed.
+   */
+  async remove(id: string): Promise<boolean> {
+    const conn = await getPool().getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.query('DELETE FROM resource_access WHERE asset_id = ?', [id]);
+      await conn.query('DELETE FROM jobs WHERE asset_id = ?', [id]);
+      const [res] = await conn.query<ResultSetHeader>('DELETE FROM assets WHERE id = ?', [id]);
+      await conn.commit();
+      return res.affectedRows === 1;
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+  },
+
   async setStorageClass(id: string, storageClass: StorageClass): Promise<void> {
     await getPool().query('UPDATE assets SET storage_class = ? WHERE id = ?', [storageClass, id]);
   },

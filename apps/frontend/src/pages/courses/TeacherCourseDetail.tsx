@@ -22,6 +22,8 @@ export function TeacherCourseDetail() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { open, openingId, errorId } = useOpenResource();
 
   const load = useCallback(async () => {
@@ -57,6 +59,20 @@ export function TeacherCourseDetail() {
       setActionError((err as ApiError).message ?? 'The status could not be changed');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function remove(id: string) {
+    setDeletingId(id);
+    setActionError(null);
+    try {
+      await api.deleteAsset(id);
+      setConfirmingId(null);
+      setResources((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      setActionError((err as ApiError).message ?? 'The resource could not be deleted');
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -192,7 +208,22 @@ export function TeacherCourseDetail() {
                     </>
                   )}
                 </div>
-                {editingId !== a.id && (
+                {editingId !== a.id && confirmingId === a.id && (
+                  <div className="cq-course-resource__confirm" role="group" aria-label={`Confirm deleting ${a.title}`}>
+                    <p className="cq-small" role="alert">
+                      <Icon name="alert" size={14} /> Delete “{a.title}” permanently? Its file and access history are removed. This cannot be undone.
+                    </p>
+                    <div className="cq-course-resource__confirm-actions">
+                      <Button size="sm" variant="secondary" disabled={deletingId === a.id} onClick={() => setConfirmingId(null)}>
+                        Cancel
+                      </Button>
+                      <Button size="sm" variant="danger" iconLeft="trash" disabled={deletingId === a.id} onClick={() => void remove(a.id)}>
+                        {deletingId === a.id ? 'Deleting…' : 'Delete'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {editingId !== a.id && confirmingId !== a.id && (
                   <div className="cq-course-resource__actions">
                     <Button size="sm" variant="ghost" iconOnly="arrow-up" disabled={busy || i === 0} onClick={() => void move(i, -1)}>
                       {`Move ${a.title} up`}
@@ -212,6 +243,9 @@ export function TeacherCourseDetail() {
                       onClick={() => void open(a.id)}
                     >
                       {openingId === a.id ? 'Opening…' : 'Open'}
+                    </Button>
+                    <Button size="sm" variant="ghost" iconOnly="trash" onClick={() => setConfirmingId(a.id)}>
+                      {`Delete ${a.title}`}
                     </Button>
                   </div>
                 )}

@@ -89,9 +89,11 @@ services:
       dockerfile: services/app-tier/Dockerfile
     env_file: [.env]
     environment:
-      - AWS_ENDPOINT_URL=http://localstack:4566
-      # Presigned download URLs must be signed against a browser-reachable host.
-      - S3_PUBLIC_ENDPOINT=http://localhost:4566
+      # Endpoints come from .env. Blank there = real AWS; set them for LocalStack.
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL:-}
+      - S3_PUBLIC_ENDPOINT=${S3_PUBLIC_ENDPOINT:-}
+      # Pass STS session token through for temporary (ASIA...) credentials.
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
       - MYSQL_HOST=mysql
     ports:
       - "4000:4000"
@@ -121,7 +123,9 @@ services:
       dockerfile: services/worker/Dockerfile
     env_file: [.env]
     environment:
-      - AWS_ENDPOINT_URL=http://localstack:4566
+      # Endpoints come from .env. Blank there = real AWS; set them for LocalStack.
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
       - MYSQL_HOST=mysql
     networks: [cq-net]
     depends_on:
@@ -136,7 +140,9 @@ services:
       dockerfile: services/web-tier/Dockerfile
     env_file: [.env]
     environment:
-      - AWS_ENDPOINT_URL=http://localstack:4566
+      # Endpoints come from .env. Blank there = real AWS; set them for LocalStack.
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
       - APP_TIER_URL=http://app-tier:4000
     ports:
       - "8080:8080"

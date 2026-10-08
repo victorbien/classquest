@@ -47,6 +47,7 @@ const PATHS: Record<IconName, string[]> = {
   image: ['M4 5h16v14H4z', 'M4 16l5-5 4 4 3-3 4 4', 'M15 9h.01'],
   user: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4 21a8 8 0 0 1 16 0'],
   layers: ['M12 3 2 8l10 5 10-5Z', 'M2 13l10 5 10-5'],
+  trash: ['M4 7h16', 'M10 11v6', 'M14 11v6', 'M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13', 'M9 7V4h6v3'],
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

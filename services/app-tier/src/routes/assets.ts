@@ -182,6 +182,30 @@ assetsRouter.patch('/:id', requireAuth, requireRole('teacher', 'admin'), async (
   }
 });
 
+/** DELETE /assets/:id — permanently remove a resource (teacher/admin). */
+assetsRouter.delete('/:id', requireAuth, requireRole('teacher', 'admin'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const asset = await assetRepo.findById(req.params.id);
+    if (!asset) throw new ApiError(404, 'NOT_FOUND', 'Asset not found');
+    // Only a course the caller manages (admins: any; teachers: their own).
+    await manageableCourse(req.user!, asset.courseId);
+
+    // Remove the S3 object first (best-effort): a missing object — e.g. a
+    // stale key whose file no longer exists — must not block the DB cleanup.
+    await storage
+      .deleteObject(asset.s3Key)
+      .catch((err: Error) => log.warn({ assetId: asset.id, s3Key: asset.s3Key, err: err.message }, 'S3 object not deleted'));
+
+    // Then the metadata and everything referencing it (jobs, access records).
+    await assetRepo.remove(asset.id);
+    void metrics.incrementCounter('AssetsDeleted');
+
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
 /** GET /assets/:id/job — current job state for this asset's processing. */
 assetsRouter.get('/:id/job', requireAuth, requireRole('teacher', 'admin'), async (req: Request, res: Response, next: NextFunction) => {
   try {

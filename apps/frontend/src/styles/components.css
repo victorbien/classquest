@@ -685,7 +685,10 @@ a.cq-btn--secondary:hover { color: var(--cq-primary-strong); }
 .cq-course-resource__desc { color: var(--cq-text-muted); }
 .cq-course-resource__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .cq-course-resource__actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-@media (max-width: 640px) { .cq-course-resource { flex-wrap: wrap; } .cq-course-resource__actions { width: 100%; justify-content: flex-end; } }
+.cq-course-resource__confirm { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; max-width: 320px; }
+.cq-course-resource__confirm p { margin: 0; display: flex; align-items: flex-start; gap: 6px; }
+.cq-course-resource__confirm-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+@media (max-width: 640px) { .cq-course-resource { flex-wrap: wrap; } .cq-course-resource__actions { width: 100%; justify-content: flex-end; } .cq-course-resource__confirm { width: 100%; max-width: none; } }
 .cq-course-section + .cq-course-section { margin-top: var(--cq-space-4); }
 .cq-course-section__label {
   padding-bottom: 6px; border-bottom: 1px solid var(--cq-border);

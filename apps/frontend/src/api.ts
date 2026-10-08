@@ -94,6 +94,11 @@ export const api = {
     return request<{ asset: Asset }>(`/assets/${id}`, json('PATCH', fields));
   },
 
+  /** Teacher/admin: permanently delete a resource (its S3 object and all metadata). */
+  deleteAsset(id: string) {
+    return request<void>(`/assets/${id}`, { method: 'DELETE' });
+  },
+
   // --- courses ---
   /** Teacher: own courses · admin: all courses (staff shape). */
   listCourses() {
