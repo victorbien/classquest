@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClassQuest — User Guide</title>
+  <meta name="description" content="Online user guide for ClassQuest: a lightweight online course platform for students, teachers and administrators." />
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- Mobile top bar -->
+  <header class="topbar">
+    <button class="nav-toggle" id="navToggle" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">
+      <span></span><span></span><span></span>
+    </button>
+    <a class="topbar-brand" href="#top">
+      <img src="/assets/classquest-logo.png" alt="" class="topbar-logo" />
+      <span>ClassQuest User Guide</span>
+    </a>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar navigation -->
+    <aside class="sidebar" id="sidebar" aria-label="Guide navigation">
+      <div class="sidebar-inner">
+        <a class="brand" href="#top">
+          <img src="/assets/classquest-logo.png" alt="ClassQuest" class="brand-logo" />
+          <span class="brand-text">
+            <strong>ClassQuest</strong>
+            <small>User Guide</small>
+          </span>
+        </a>
+
+        <nav class="toc" aria-label="Table of contents">
+          <p class="toc-label">Contents</p>
+          <ul>
+            <li><a href="#about">About this guide</a></li>
+            <li><a href="#concepts">Key concepts</a></li>
+            <li><a href="#getting-started">Getting started</a></li>
+            <li><a href="#student">Student guide</a></li>
+            <li><a href="#teacher">Teacher guide</a></li>
+            <li><a href="#admin">Administrator guide</a></li>
+            <li><a href="#demo-controls">Demonstration controls</a></li>
+            <li><a href="#run-locally">Running locally</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </nav>
+
+        <div class="sidebar-foot">
+          <a class="download-btn" href="/USER_GUIDE.pdf" download>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.59l2.3-2.3a1 1 0 0 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 1.4-1.42l2.3 2.3V4a1 1 0 0 1 1-1Zm-7 15a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>
+            Download PDF
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Backdrop for mobile menu -->
+    <div class="backdrop" id="backdrop" hidden></div>
+
+    <!-- Main content -->
+    <main class="content" id="main">
+      <div class="content-inner" id="top">
+
+        <!-- Hero -->
+        <section class="hero">
+          <p class="eyebrow">Cloud Computing Prototype · INFS803</p>
+          <h1>ClassQuest User Guide</h1>
+          <p class="lede">
+            Everything you need to use ClassQuest — a lightweight online course
+            platform for students, teachers and administrators.
+          </p>
+          <div class="hero-note">
+            <strong>Research prototype.</strong> All content is synthetic sample
+            data. ClassQuest is intended for demonstration, not for managing real
+            courses, grades or personal records.
+          </div>
+        </section>
+
+        <!-- About -->
+        <section id="about" class="section">
+          <h2>About this guide</h2>
+          <p>
+            This is the end-user manual for <strong>ClassQuest</strong>. It explains how
+            to sign in, how each kind of user works day to day, and how to get the
+            system running for a demonstration.
+          </p>
+          <p>ClassQuest has three kinds of users:</p>
+          <div class="cards">
+            <div class="card">
+              <div class="card-icon student">S</div>
+              <h3>Students</h3>
+              <p>Browse published courses, open resources (documents, books and videos), and track what they have opened.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon teacher">T</div>
+              <h3>Teachers</h3>
+              <p>Create courses, upload resources, arrange them, and publish courses so students can see them.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon admin">A</div>
+              <h3>Administrators</h3>
+              <p>Monitor system health, run demonstration controls, and browse every resource in the library.</p>
+            </div>
+          </div>
+          <h3>Who should read which part</h3>
+          <table>
+            <thead><tr><th>You are a…</th><th>Start at</th></tr></thead>
+            <tbody>
+              <tr><td>Student</td><td><a href="#getting-started">Getting started</a> → <a href="#student">Student guide</a></td></tr>
+              <tr><td>Teacher</td><td><a href="#getting-started">Getting started</a> → <a href="#teacher">Teacher guide</a></td></tr>
+              <tr><td>Administrator</td><td><a href="#getting-started">Getting started</a> → <a href="#admin">Administrator guide</a></td></tr>
+              <tr><td>Setting up a demo</td><td><a href="#run-locally">Running ClassQuest locally</a></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Key concepts -->
+        <section id="concepts" class="section">
+          <h2>Key concepts</h2>
+          <p>A few terms are used throughout this guide.</p>
+          <dl class="terms">
+            <dt>Course</dt>
+            <dd>A container for related learning resources. A course has a title, description, category, an optional cover image, and a status.</dd>
+            <dt>Resource</dt>
+            <dd>A single learning item inside a course. Three types exist: <strong>Document</strong>, <strong>Book</strong> (a digital book) and <strong>Video</strong>. Each can carry an optional week or section label.</dd>
+            <dt>Course status</dt>
+            <dd>
+              A course is one of:
+              <span class="badge draft">Draft</span> only its teacher and administrators can see it;
+              <span class="badge published">Published</span> visible to students;
+              <span class="badge archived">Archived</span> hidden from students again, with resources and history kept but no new resources allowed.
+            </dd>
+            <dt>Resource processing</dt>
+            <dd>When a resource is uploaded it runs through a short automatic pipeline — <em>Submitted → Queued → Processing → Completed</em> — usually within a few seconds. Students only ever see resources that reach <strong>Completed</strong>.</dd>
+            <dt>My Progress</dt>
+            <dd>For students, this means <em>resources opened</em>, overall and per course. It is <strong>not</strong> a grade, score, or measure of mastery or lesson completion.</dd>
+          </dl>
+        </section>
+
+        <!-- Getting started -->
+        <section id="getting-started" class="section">
+          <h2>Getting started</h2>
+
+          <h3>Signing in</h3>
+          <ol>
+            <li>Open ClassQuest in your browser at <code>http://localhost:8080</code>.</li>
+            <li>Enter your email and password on the <strong>Login</strong> screen.</li>
+            <li>Select <strong>Sign in</strong>. You land on the home screen for your role: students on <strong>Home</strong>, teachers on their <strong>Dashboard</strong>, administrators on <strong>Operations</strong>.</li>
+          </ol>
+
+          <h3>Demonstration accounts</h3>
+          <p>When the prototype runs in demo mode (the default), three accounts are created for you automatically. These are public, synthetic credentials for demonstration only.</p>
+          <table>
+            <thead><tr><th>Role</th><th>Email</th><th>Password</th></tr></thead>
+            <tbody>
+              <tr><td>Student</td><td><code>student@classquest.example</code></td><td><code>DemoStudent123!</code></td></tr>
+              <tr><td>Teacher</td><td><code>teacher@classquest.example</code></td><td><code>DemoTeacher123!</code></td></tr>
+              <tr><td>Administrator</td><td><code>admin@classquest.example</code></td><td><code>DemoAdmin123!</code></td></tr>
+            </tbody>
+          </table>
+
+          <h3>Finding your way around</h3>
+          <p>Every screen shares the same layout: a <strong>sidebar</strong> on the left with the pages for your role, and a <strong>top bar</strong> showing the current page and your account. The pages you see depend on your role:</p>
+          <table>
+            <thead><tr><th>Role</th><th>Pages in the sidebar</th></tr></thead>
+            <tbody>
+              <tr><td>Student</td><td>Home · Courses · My Progress</td></tr>
+              <tr><td>Teacher</td><td>Dashboard · My Courses · Publish Resource · Operations</td></tr>
+              <tr><td>Administrator</td><td>Operations · Library</td></tr>
+            </tbody>
+          </table>
+          <p>If you open a page that is not meant for your role, ClassQuest simply returns you to your own home page.</p>
+
+          <h3>Signing out</h3>
+          <p>Use the account control in the top bar to sign out. Your session token expires automatically after about an hour, so you may be asked to sign in again during a long session.</p>
+        </section>
+
+        <!-- Student -->
+        <section id="student" class="section">
+          <h2>Student guide</h2>
+          <p>As a student you can browse published courses, open their resources, and see your own progress. You cannot see draft or archived courses.</p>
+
+          <h3>Home</h3>
+          <p>The <strong>Home</strong> screen is your starting point. Once you have opened at least one resource, it shows a <strong>Continue where you left off</strong> shortcut.</p>
+
+          <h3>Browsing courses</h3>
+          <ol>
+            <li>Select <strong>Courses</strong> in the sidebar.</li>
+            <li>You see every <strong>published</strong> course as a card, with its cover image (or a coloured placeholder), title, category, and your progress for that course (for example <em>3 / 4 resources opened · 75%</em>).</li>
+            <li>Select a course to open it.</li>
+          </ol>
+          <p>Draft and archived courses are never listed for students.</p>
+
+          <h3>Opening a resource</h3>
+          <ol>
+            <li>Resources are grouped by their <strong>week or section label</strong> and shown in the order the teacher arranged them.</li>
+            <li>Only <strong>completed</strong> resources appear.</li>
+            <li>Select <strong>Open</strong>. The file opens in a new tab via a secure, time-limited link (valid about five minutes). If it expires, select <strong>Open</strong> again for a fresh link.</li>
+          </ol>
+
+          <h3>Tracking your progress</h3>
+          <p>Select <strong>My Progress</strong> to see your overall totals, a coverage percentage, a breakdown by resource type and by course, and a <strong>Recently opened</strong> list.</p>
+          <div class="callout info">
+            Progress counts a resource the moment you open it — it reflects what you have <em>looked at</em>, not how well you understood it. Only completed resources in published courses are counted, so "opened" can never exceed "available".
+          </div>
+        </section>
+
+        <!-- Teacher -->
+        <section id="teacher" class="section">
+          <h2>Teacher guide</h2>
+          <p>As a teacher you create courses, add resources, arrange and publish them, and manage each course through its lifecycle. You can only manage courses <strong>you</strong> created.</p>
+
+          <h3>Dashboard</h3>
+          <p>The <strong>Dashboard</strong> is your landing page. It summarises recent activity and the processing pipeline, and includes a <strong>My Courses</strong> card focused on the courses you own.</p>
+
+          <h3>Creating a course</h3>
+          <ol>
+            <li>Select <strong>My Courses</strong> → <strong>Create Course</strong>.</li>
+            <li>Fill in <strong>Title</strong>, <strong>Description</strong>, <strong>Category</strong>, and an optional <strong>Cover image</strong> (PNG, JPEG or WebP up to 2 MB). Without one, a category-tinted placeholder is drawn.</li>
+            <li>Select <strong>Save as draft</strong>. Students cannot see it yet.</li>
+          </ol>
+
+          <h3>Adding a resource</h3>
+          <ol>
+            <li>Open one of your courses and select <strong>Add Resource</strong>.</li>
+            <li>Choose the type: <strong>Document</strong>, <strong>Book</strong> or <strong>Video</strong>.</li>
+            <li>Enter a <strong>title</strong>, an optional <strong>description</strong>, and an optional <strong>week or section label</strong>.</li>
+            <li>Drag and drop a file, or browse for one. Keep demonstration files small.</li>
+            <li>Select <strong>Upload &amp; publish</strong>.</li>
+          </ol>
+          <p>A <strong>Processing pipeline</strong> indicator moves through <em>Submitted → Queued → Processing → Completed</em>, usually within a few seconds. When it completes, the resource joins the course's ordered list.</p>
+          <div class="callout">
+            Only the file <strong>type and size</strong> are checked. If a file is rejected, nothing is stored and you see a short message — just try a different file.
+          </div>
+
+          <h3>Arranging resources</h3>
+          <p>On the course page you can <strong>reorder</strong> resources with the up/down arrows (new resources are added to the end) and <strong>edit</strong> a resource's details inline.</p>
+
+          <h3>Publishing, archiving and restoring a course</h3>
+          <ul>
+            <li><strong>Publish Course</strong> — moves a draft to published; students can now see it.</li>
+            <li><strong>Return to draft</strong> — moves a published course back to draft, hiding it again.</li>
+            <li><strong>Archive course</strong> — hides it from students immediately; resources and history are kept, but no new resources can be added.</li>
+            <li><strong>Restore to draft</strong> — brings an archived course back to draft. (Archived cannot go straight to published — restore to draft first, then publish.)</li>
+          </ul>
+          <table>
+            <thead><tr><th>From</th><th>You can go to</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge draft">Draft</span></td><td>Published, Archived</td></tr>
+              <tr><td><span class="badge published">Published</span></td><td>Draft, Archived</td></tr>
+              <tr><td><span class="badge archived">Archived</span></td><td>Draft</td></tr>
+            </tbody>
+          </table>
+          <div class="callout info">
+            Courses are deliberately lightweight: <strong>no enrolment</strong> (every student sees every published course), and no grades, quizzes, assignments, forums or certificates. Ordering uses up/down arrows, not drag-and-drop.
+          </div>
+        </section>
+
+        <!-- Admin -->
+        <section id="admin" class="section">
+          <h2>Administrator guide</h2>
+          <p>Administrators focus on system health and on browsing the full library. Administrators can also manage any course, not just their own.</p>
+
+          <h3>Operations</h3>
+          <p>The <strong>Operations</strong> screen is the control centre for a demonstration. Key panels:</p>
+          <ul>
+            <li><strong>Service health</strong> — the status of each underlying service (database, object storage, message queue, monitoring and alerting).</li>
+            <li><strong>Storage overview</strong> — how resource files are distributed across storage tiers.</li>
+            <li><strong>Monitoring</strong> — the count of recent bad (HTTP 400) requests and the monitoring alarm state.</li>
+          </ul>
+
+          <h3>Library</h3>
+          <p>The <strong>Library</strong> gives administrators a view of <strong>every</strong> resource across all courses, useful for an overview or spot checks.</p>
+        </section>
+
+        <!-- Demo controls -->
+        <section id="demo-controls" class="section">
+          <h2>Demonstration controls</h2>
+          <p>The <strong>Operations</strong> screen (teachers and administrators) includes <strong>Demonstration Controls</strong>. Everything they create is clearly labelled demo/sample content so students never see it by accident.</p>
+          <table>
+            <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td>Seed demo catalogue</td><td>Creates four sample courses (<em>Cloud Computing</em>, <em>Applied Blockchain</em>, <em>Data Analytics</em> published, and <em>Cybersecurity Essentials</em> draft) and uploads eleven resources through the normal pipeline. Running it again skips what already exists.</td></tr>
+              <tr><td>Induce processing failure</td><td>Deliberately fails one resource to show automatic retries. After the third attempt it is marked <strong>Failed</strong> and moved to a dead-letter queue. The failing resource stays in a hidden draft course.</td></tr>
+              <tr><td>Simulate Glacier tiering</td><td>Moves up to ten completed demo resources to the long-term "Glacier" tier immediately, instead of waiting for the 90-day rule.</td></tr>
+              <tr><td>Generate HTTP 400 burst</td><td>Sends a burst of deliberately bad requests to demonstrate monitoring. The monitoring panel switches to <strong>Threshold exceeded</strong>.</td></tr>
+            </tbody>
+          </table>
+          <div class="callout warn">
+            <strong>Local demonstration limits.</strong> When running locally a few cloud behaviours are simulated rather than fully reproduced: the monitoring <strong>alarm</strong> is not expected to change to the fired state, alert <strong>emails</strong> are never actually sent, and <strong>Glacier restore</strong> is not implemented (so opening a Glacier-tier resource may be refused — as real long-term storage behaves without a restore step). These are expected and labelled in the interface.
+          </div>
+        </section>
+
+        <!-- Run locally -->
+        <section id="run-locally" class="section">
+          <h2>Running ClassQuest locally</h2>
+          <p>This section is for the person setting up a demonstration.</p>
+
+          <h3>What you need</h3>
+          <ul>
+            <li><strong>Docker Desktop</strong> (with Docker Compose), running.</li>
+            <li><strong>Node.js 20 or later</strong> — only on the host for the automated tests and helper scripts; the app runs inside Docker.</li>
+            <li>Ports <strong>8080, 4000, 3306 and 4566</strong> free.</li>
+            <li>No AWS account and no cloud cost — the cloud services are emulated locally.</li>
+          </ul>
+
+          <h3>Start the stack</h3>
+          <pre><code># 1. Create your local settings file (defaults work as-is)
+cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
+
+# 2. Build and start everything
+docker compose up -d --build
+
+# 3. Wait until app-tier and web-tier show "healthy"
+docker compose ps</code></pre>
+          <p>Then open <code>http://localhost:8080</code> and sign in with a demonstration account.</p>
+
+          <h3>Seed the sample content</h3>
+          <p>From the interface (<strong>Operations → Demonstration Controls → Seed demo catalogue</strong>) or the command line:</p>
+          <pre><code>npm run demo:seed</code></pre>
+
+          <h3>Stop or reset</h3>
+          <pre><code>docker compose down        # stop, keep data
+docker compose down -v     # stop and DELETE all data</code></pre>
+          <div class="callout warn">
+            <strong>Warning:</strong> <code>docker compose down -v</code> permanently deletes the local database and stored files. Use plain <code>docker compose down</code> to keep your demo data.
+          </div>
+        </section>
+
+        <!-- Troubleshooting -->
+        <section id="troubleshooting" class="section">
+          <h2>Troubleshooting</h2>
+          <table>
+            <thead><tr><th>Symptom</th><th>Likely cause and fix</th></tr></thead>
+            <tbody>
+              <tr><td>The page will not load at <code>localhost:8080</code></td><td>The stack may still be starting. Run <code>docker compose ps</code> and wait until <code>app-tier</code> and <code>web-tier</code> are healthy.</td></tr>
+              <tr><td>"Docker daemon" or "engine" errors</td><td>Docker Desktop is not running. Start it, wait for <em>Engine running</em>, then start the stack again.</td></tr>
+              <tr><td>A port is "already allocated"</td><td>Another program uses port 8080, 4000, 3306 or 4566 (often a local MySQL on 3306). Stop it or free the port.</td></tr>
+              <tr><td>A student cannot see a course</td><td>The course is in Draft or Archived status, or its resources have not finished processing. Publish and wait for Completed.</td></tr>
+              <tr><td>A resource will not open</td><td>The link may have expired (about five minutes) — select Open again. A Glacier-tier resource may be refused by design.</td></tr>
+              <tr><td>A newly uploaded resource is missing</td><td>Processing may still be running. Wait for Submitted → Queued → Processing → Completed.</td></tr>
+              <tr><td>The monitoring alarm never "fires"</td><td>Expected locally — the emulator does not evaluate the alarm. The request count still updates and is labelled.</td></tr>
+              <tr><td>You were signed out unexpectedly</td><td>Sign-in tokens expire after about an hour. Sign in again.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- FAQ -->
+        <section id="faq" class="section">
+          <h2>Frequently asked questions</h2>
+          <details><summary>Is my data real?</summary><p>No. ClassQuest is a prototype that uses only synthetic sample content, intended for demonstration — not for managing real courses or student records.</p></details>
+          <details><summary>Does "My Progress" mean my grade?</summary><p>No. Progress records which resources you have <em>opened</em>. It is not a grade, score, or measure of understanding or completion.</p></details>
+          <details><summary>Why can't students enrol in a specific course?</summary><p>By design there is no enrolment. Every student can see every published course.</p></details>
+          <details><summary>Can a teacher edit another teacher's course?</summary><p>No. Teachers manage only the courses they created. Administrators can manage any course.</p></details>
+          <details><summary>Where can I learn how the system is built?</summary><p>See the project's <code>ARCHITECTURE.md</code> and <code>README.md</code> for the technical design and how the prototype maps to a full cloud deployment.</p></details>
+        </section>
+
+        <footer class="footer">
+          <p>ClassQuest is a research proof-of-concept. All content is synthetic DEMO/SAMPLE data.</p>
+          <p><a href="/USER_GUIDE.pdf" download>Download this guide as PDF</a></p>
+        </footer>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="/script.js" defer></script>
+</body>
+</html>
